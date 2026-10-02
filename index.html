@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Viroh Automation | Pranay Padave</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f7f3;--card:#fff;--ink:#14231d;--mut:#5f6f66;--line:#dfe6df;--g:#1b4d3e;--gd:#123a2e;--lime:#c8f08a;--mint:#e4efe4;--cor:#e9946a;--blu:#6f98c9;--gr:#2f8a62;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a15;--card:#16251e;--ink:#eaf3ec;--mut:#9db0a5;--line:#27392f;--mint:#1d3328}}
+:root[data-theme="dark"]{--bg:#0f1a15;--card:#16251e;--ink:#eaf3ec;--mut:#9db0a5;--line:#27392f;--mint:#1d3328}
+*,*:before,*:after{box-sizing:inherit}html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 'DM Sans',system-ui,sans-serif}
+.serif{font-family:'Instrument Serif',Georgia,serif;font-style:italic;font-weight:400;color:var(--gr)}
+h1,h2,h3{line-height:1.05;margin:0;letter-spacing:-.03em}
+h1{font-size:clamp(2.6rem,6vw,4.6rem)}h2{font-size:clamp(2rem,4vw,3rem)}h3{font-size:1.15rem;letter-spacing:-.01em;font-weight:500}
+a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--gr);outline-offset:2px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:11px 20px;border-radius:10px;font-weight:500;transition:transform .2s,box-shadow .2s,background .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(20,60,45,.15)}
+.btn.p{background:var(--g);color:#fff;border-color:var(--g)}.btn.sm{padding:6px 12px;font-size:.82rem}.btn.dng{color:#b4492a}
+nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:68px;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.25rem;letter-spacing:-.03em}
+.logo i{font-style:normal;background:var(--lime);color:var(--gd);width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:1rem}
+.links{display:flex;gap:28px;font-weight:500;font-size:.95rem}.links a{color:var(--mut);transition:color .2s}.links a:hover{color:var(--ink)}
+.nr{display:flex;gap:12px;align-items:center}
+@media(max-width:820px){.links{display:none}}
+/* hero */
+.hero{padding:72px 0 56px;background:radial-gradient(600px 400px at 85% 30%,#d9f1b8 0,transparent 70%)}
+.hero .wrap{display:grid;grid-template-columns:1fr 1.1fr;gap:48px;align-items:center}
+.tag{font-size:.78rem;font-weight:700;letter-spacing:.14em;color:var(--gr);margin-bottom:20px}
+.hero p.lead{font-size:1.15rem;color:var(--mut);max-width:30em;margin:24px 0 32px}
+.stats{display:flex;gap:36px;margin-top:44px;padding-top:24px;border-top:1px solid var(--line)}.stats b{font-size:1.6rem;display:block}.stats span{font-size:.85rem;color:var(--mut)}
+.mock{background:var(--card);border-radius:20px;box-shadow:0 30px 60px rgba(20,60,45,.18);display:grid;grid-template-columns:44px 1fr;overflow:hidden;border:1px solid var(--line);animation:float 6s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-8px)}}
+.mock .sb{background:var(--g);display:flex;flex-direction:column;gap:12px;align-items:center;padding:14px 0}
+.mock .sb i{width:16px;height:16px;border-radius:5px;border:1.5px solid #5f8f7c}.mock .sb i:first-child{background:var(--lime);border:0}
+.mock .mb{padding:18px}.mock .kp{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.k{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card)}.k small{display:block;font-size:.68rem;color:var(--mut)}.k b{font-size:1.1rem}
+.mock .ch{display:grid;grid-template-columns:1.6fr 1fr;gap:8px}.pn{border:1px solid var(--line);border-radius:10px;padding:10px}.pn small{font-size:.7rem;font-weight:700}
+.mock svg{width:100%;height:auto;display:block}
+.draw{stroke-dasharray:420;stroke-dashoffset:420;animation:dr 2.4s .6s ease forwards}@keyframes dr{to{stroke-dashoffset:0}}
+.seg{transition:stroke-dasharray 1.4s ease}
+@media(max-width:900px){.hero .wrap{grid-template-columns:1fr}.mock .kp{grid-template-columns:repeat(2,1fr)}}
+.in{opacity:0;transform:translateY(18px);animation:up .8s cubic-bezier(.2,.7,.2,1) forwards}@keyframes up{to{opacity:1;transform:none}}
+/* sections */
+.tools{background:var(--card);border-block:1px solid var(--line);padding:22px 0}.tools .wrap{display:flex;flex-wrap:wrap;gap:12px 40px;align-items:center;font-weight:500;color:var(--mut)}.tools small{font-size:.75rem;letter-spacing:.12em;font-weight:700}
+section{padding:96px 0}.sh{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap;margin-bottom:44px}.sh p{max-width:26em;color:var(--mut);margin:0}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:22px}
+.wk{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s;text-align:left;padding:0;color:inherit}
+.wk:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(20,60,45,.14)}
+.wk .th{height:190px;padding:22px 22px 0;display:flex;align-items:flex-end;gap:7px}.wk .th div{flex:1;border-radius:5px 5px 0 0;height:var(--h);transform-origin:bottom;transition:transform .5s}.wk:hover .th div{transform:scaleY(1.12)}
+.wk .bd{padding:20px 22px 22px}.pill{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:6px}
+.wk p{color:var(--mut);font-size:.9rem;margin:8px 0 18px}.wk .ft{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:14px}.ft b{font-size:1.4rem}.ft small{color:var(--mut);margin-left:6px}
+.sv{background:var(--mint)}.sv .c{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;transition:transform .3s}.sv .c:hover{transform:translateY(-4px)}
+.ic{width:44px;height:44px;border-radius:12px;background:var(--mint);color:var(--g);display:grid;place-items:center;margin-bottom:18px;font-size:1.3rem}.sv .c p{color:var(--mut);font-size:.92rem}
+.ab{display:grid;grid-template-columns:1fr 1.2fr;gap:56px;align-items:center}@media(max-width:820px){.ab{grid-template-columns:1fr}}
+.av{aspect-ratio:1;max-width:380px;background:var(--mint);border-radius:50% 50% 24px 24px/40% 40% 24px 24px;display:grid;place-items:center;position:relative}
+.av b{width:42%;aspect-ratio:1;background:var(--g);color:var(--lime);border-radius:50%;display:grid;place-items:center;font-size:2.6rem;font-weight:400}
+.av .ex{position:absolute;right:-16px;bottom:-24px;background:var(--g);color:#fff;border-radius:12px;padding:14px 16px;font-size:.78rem;display:flex;flex-wrap:wrap;gap:6px;max-width:220px}.ex span{border:1px solid #4a7a68;border-radius:5px;padding:2px 8px}
+.ck{list-style:none;padding:0;margin:22px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.92rem}.ck li:before{content:"✓";color:var(--gr);background:var(--mint);width:22px;height:22px;display:inline-grid;place-items:center;border-radius:50%;margin-right:8px;font-size:.75rem}
+.ct{background:var(--gd);color:#fff}.ct .wrap{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}@media(max-width:820px){.ct .wrap{grid-template-columns:1fr}}
+.ct .serif{color:var(--lime)}.ct p{color:#b7d3c6}
+.cd{display:grid;gap:10px;margin-top:26px}.cd a{display:flex;gap:14px;align-items:center;padding:14px 16px;border:1px solid rgba(255,255,255,.16);border-radius:14px;color:#fff;text-decoration:none;transition:background .2s,border-color .2s}.cd a:hover{background:rgba(255,255,255,.06);border-color:var(--lime)}
+.cd i{font-style:normal;flex:none;width:38px;height:38px;border-radius:10px;background:var(--lime);color:var(--gd);display:grid;place-items:center;font-size:1.05rem}.cd small{display:block;color:#b7d3c6;font-size:.78rem}.cd b{font-weight:600;word-break:break-all}
+form.f{background:var(--card);color:var(--ink);border-radius:18px;padding:26px;display:grid;gap:14px}
+label{font-size:.78rem;font-weight:700;display:grid;gap:6px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;width:100%;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--gr);box-shadow:0 0 0 3px rgba(47,138,98,.2)}.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+footer{background:#0d2a21;color:#8fb0a2;padding:26px 0;font-size:.85rem}footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:center}footer .logo{color:#fff}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,28,21,.6);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px;z-index:50;opacity:0;pointer-events:none;transition:opacity .3s}
+.ov.on{opacity:1;pointer-events:auto}.md{background:var(--card);border-radius:18px;width:min(980px,100%);max-height:92vh;overflow:auto;padding:26px;transform:scale(.96) translateY(14px);transition:transform .35s cubic-bezier(.2,.8,.2,1)}.ov.on .md{transform:none}
+.md.s{width:min(400px,100%)}.md.full{width:min(1600px,100%);height:94vh;max-height:94vh;display:flex;flex-direction:column;padding:18px}.md.full iframe{flex:1;height:auto;min-height:0}.mh{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:16px}
+.seg2{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}.seg2 button{border:0;background:0;padding:6px 12px;color:var(--mut);font-size:.82rem}.seg2 .on{background:var(--g);color:#fff}
+.bars{display:flex;align-items:flex-end;gap:8px;height:190px;padding:10px 4px 0;border-bottom:1px solid var(--line)}.bars div{flex:1;background:var(--g);border-radius:5px 5px 0 0;transition:height .6s cubic-bezier(.2,.8,.2,1);position:relative}.bars div:hover{background:var(--lime)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}th{font-size:.68rem;letter-spacing:.1em;color:var(--mut);text-align:left;padding:10px 12px;background:var(--bg)}td{padding:12px;border-top:1px solid var(--line)}
+iframe{width:100%;height:75vh;border:1px solid var(--line);border-radius:10px;background:#fff}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);background:var(--gd);color:#fff;padding:12px 20px;border-radius:10px;opacity:0;transition:.35s;z-index:80;pointer-events:none}.toast.on{opacity:1;transform:translate(-50%,0)}
+/* admin */
+#admin{position:fixed;inset:0;z-index:40;background:var(--bg);display:grid;grid-template-columns:250px 1fr;transform:translateX(100%);transition:transform .5s cubic-bezier(.2,.8,.2,1);visibility:hidden}
+#admin.on{transform:none;visibility:visible}
+.as{background:var(--gd);color:#d8eadf;padding:22px 14px;display:flex;flex-direction:column;gap:4px;overflow:auto}.as .logo{color:#fff;padding:0 8px 22px}
+.as button.n{background:0;border:0;color:inherit;text-align:left;padding:11px 12px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;transition:background .2s}
+.as button.n:hover{background:#1d4a3b}.as button.n.on{background:#265c4a;color:#fff}.bd2{background:var(--lime);color:var(--gd);border-radius:99px;font-size:.7rem;font-weight:700;padding:1px 8px}
+.am{overflow:auto;padding:36px clamp(20px,4vw,56px)}.am .top{display:flex;justify-content:space-between;align-items:start;gap:16px;flex-wrap:wrap;margin-bottom:28px}.am h2{font-size:2.2rem}
+.pv{animation:up .5s forwards;opacity:0}
+.kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:22px}.kc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}.kc small{color:var(--mut);display:block}.kc b{font-size:2rem}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:22px}.box>.bh{padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.st{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px}.st.pub{background:#dcf2e3;color:#1d6b47}.st.dr{background:#f3e8dc;color:#8a5a2b}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:30px;text-align:center;color:var(--mut);transition:.2s;margin:0 20px 20px}.drop.hv{border-color:var(--gr);background:var(--mint)}
+.sr{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 20px;border-top:1px solid var(--line)}.sr p{margin:0;color:var(--mut);font-size:.88rem}
+.sw{width:46px;height:26px;border-radius:99px;background:var(--line);border:0;position:relative;transition:background .25s;flex:none}.sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .25s}.sw.on{background:var(--gr)}.sw.on:after{transform:translateX(20px)}
+.tw{overflow-x:auto}.pad{padding:0 20px 18px;margin:0;color:var(--mut);font-size:.9rem}.err{display:block;min-height:1.2em;margin-top:8px;color:#b4492a}
+.key{font:600 1.05rem/1.5 ui-monospace,Consolas,monospace;letter-spacing:.06em;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;word-break:break-all;user-select:all}
+code{font:.9em ui-monospace,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+#cfb{display:grid;gap:8px}#cfb .btn{justify-content:center}.btn:disabled{opacity:.6;cursor:wait;transform:none}
+@media(max-width:760px){#admin{grid-template-columns:1fr;grid-template-rows:auto 1fr}.as{flex-direction:row;flex-wrap:wrap;padding:12px}.as .logo{padding:0 8px 0 0}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="site">
+<nav><div class="wrap"><a class="logo" href="#top"><i>V</i>Viroh Automation</a>
+<div class="links"><a href="#work">Work</a><a href="#services">Services</a><a href="#about">About</a><a href="#contact">Contact</a></div>
+<div class="nr"><a class="btn p sm" href="#contact">Let’s work together</a></div></div></nav>
+
+<header class="hero" id="top"><div class="wrap">
+<div><div class="tag in" style="animation-delay:.1s">E-COMMERCE ANALYTICS CONSULTANCY</div>
+<h1 class="in" style="animation-delay:.2s">Operational data, <span class="serif">made useful.</span></h1>
+<p class="lead in" style="animation-delay:.35s">I’m Pranay Padave. I build automated dashboards that help e-commerce and logistics teams see what’s happening, understand why, and act faster.</p>
+<div class="in" style="animation-delay:.5s;display:flex;gap:12px;flex-wrap:wrap"><a class="btn p" href="#work">Explore my work</a><a class="btn" href="#contact">Discuss a project</a></div>
+<div class="stats in" style="animation-delay:.65s"><div><b data-n="5" data-s="+">0</b><span>Years in analytics</span></div><div><b data-n="40" data-s="+">0</b><span>Dashboards delivered</span></div><div><b data-n="12">0</b><span>Operations optimized</span></div></div></div>
+<div class="mock in" style="animation-delay:.4s"><div class="sb"><i></i><i></i><i></i><i></i></div><div class="mb">
+<small style="color:var(--mut)">Operations overview</small><h3>Fulfillment Control Tower</h3>
+<div class="kp"><div class="k"><small>Orders shipped</small><b data-n="18492" data-c="1">0</b></div><div class="k"><small>On-time rate</small><b data-n="96.8" data-s="%" data-d="1">0</b></div><div class="k"><small>Avg cycle</small><b data-n="8.4" data-s="h" data-d="1">0</b></div><div class="k"><small>Exceptions</small><b data-n="127">0</b></div></div>
+<div class="ch"><div class="pn"><small>Orders vs. target</small><svg viewBox="0 0 220 100"><path d="M0 85 L220 30" stroke="#b9c9bf" stroke-dasharray="3 4" fill="none"/><path class="draw" d="M0 80 C20 60 30 90 50 70 S80 40 100 55 S130 20 160 25 S190 10 220 5" stroke="#2f8a62" stroke-width="2.5" fill="none"/></svg></div>
+<div class="pn"><small>Orders by status</small><svg viewBox="0 0 100 100"><g fill="none" stroke-width="14" transform="rotate(-90 50 50)"><circle class="seg" id="s1" cx="50" cy="50" r="36" stroke="#2f8a62" stroke-dasharray="0 226" /><circle class="seg" id="s2" cx="50" cy="50" r="36" stroke="#9fcbb4" stroke-dasharray="0 226" stroke-dashoffset="-149"/><circle class="seg" id="s3" cx="50" cy="50" r="36" stroke="#e9946a" stroke-dasharray="0 226" stroke-dashoffset="-197"/></g><text x="50" y="54" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">18.4K</text></svg></div></div></div></div>
+</div></header>
+
+<div class="tools"><div class="wrap"><small>TOOLS I WORK WITH</small><span>▮▮▮ Power BI</span><span>✚ Tableau</span><span>▣ Advanced Excel</span><span>◉ SQL</span><span>🐍 Python</span></div></div>
+
+<section id="work"><div class="wrap"><div class="sh"><div><div class="tag">SELECTED WORK</div><h2>Dashboards that drive better operations.</h2></div><p>Every dashboard is designed around the decisions your team needs to make. Open one to try the live demo.</p></div>
+<div class="grid3" id="workGrid"></div></div></section>
+
+<section class="sv" id="services"><div class="wrap"><div class="sh" style="justify-content:center;text-align:center"><div><div class="tag">HOW I CAN HELP</div><h2>Analytics built for the <span class="serif">way you operate.</span></h2><p style="margin:16px auto 0">Practical, maintainable solutions, not reports that gather dust.</p></div></div>
+<div class="grid3">
+<div class="c"><div class="ic">📊</div><h3>Decision-ready dashboards</h3><p>Tableau and Power BI dashboards built around the KPIs that move your operation.</p><a class="btn sm" href="#contact" data-svc="Dashboard building">Request this</a></div>
+<div class="c"><div class="ic">⚙️</div><h3>Reporting automation</h3><p>Replace recurring spreadsheets with reliable data flows, scheduled refreshes, and clean reporting.</p><a class="btn sm" href="#contact" data-svc="Automation services">Request this</a></div>
+<div class="c"><div class="ic">📦</div><h3>Supply chain analytics</h3><p>Inventory, fulfillment, returns, and warehouse analysis that shows where margin is leaking.</p><a class="btn sm" href="#contact" data-svc="Supply chain analytics">Request this</a></div></div></div></section>
+
+<section id="about"><div class="wrap ab"><div class="av"><b>PP</b><div class="ex"><span>Supply chain</span><span>Warehouse ops</span><span>E-commerce</span><span>Automation</span></div></div>
+<div><div class="tag">ABOUT ME</div><h2>I turn operational complexity into <span class="serif">clarity.</span></h2>
+<p style="font-weight:500;margin:20px 0 6px">E-commerce Data Analyst specializing in supply chain and warehouse analytics.</p>
+<p style="color:var(--mut);margin:0;max-width:34em">I work with growing commerce teams to uncover the story behind their operations: connecting fragmented data, removing manual reporting, and turning metrics into a clear next action.</p>
+<ul class="ck"><li>Business-first analysis</li><li>Clean, scalable data models</li><li>Built for real-world teams</li><li>Clear handover & training</li></ul></div></div></section>
+
+<section class="ct" id="contact"><div class="wrap"><div><div class="tag" style="color:var(--lime)">START A CONVERSATION</div><h2>Let’s make your data <span class="serif">work harder.</span></h2><p style="margin-top:18px">Tell me where your reporting or operations feel stuck. I’ll get back to you within two business days with a practical next step.</p><div class="cd" id="cdet"></div></div>
+<form class="f" id="cf"><div class="r2"><label>Your name<input name="n" required maxlength="80" autocomplete="name" placeholder="Jane Smith"></label><label>Work email<input name="e" type="email" required maxlength="120" autocomplete="email" placeholder="jane@company.com"></label></div>
+<label>Phone number <small style="color:var(--mut);font-weight:400">(optional)</small><input name="p" type="tel" inputmode="tel" autocomplete="tel" pattern="[0-9+()\-\s]{7,20}" placeholder="+91 98765 43210"></label>
+<label>What do you need help with?<select name="s" id="svc" required><option value="">Select a service</option><option>Dashboard building</option><option>Automation services</option><option>Supply chain analytics</option><option>Something else</option></select></label>
+<label>Tell me about the challenge<textarea name="m" rows="4" required maxlength="1500" placeholder="What are you trying to understand or improve?"></textarea></label>
+<div id="cfb"></div><small style="text-align:center;color:var(--mut)">🔒 Your brief goes straight to me from your own email or WhatsApp. Nothing is stored on this site.</small></form></div></section>
+<footer><div class="wrap"><a class="logo" href="#top"><i>V</i>Viroh Automation</a><span>© 2026 Pranay Padave. All rights reserved.</span><span><a href="#work">Work</a> · <a href="#services">Services</a> · <a href="#about">About</a> · <a href="#admin" id="adm">Admin</a></span></div></footer>
+</div>
+
+<div id="admin"><aside class="as"><div class="logo"><i>V</i>Viroh Automation</div>
+<button class="n on" data-v="ov">Overview</button><button class="n" data-v="db">Dashboards</button><button class="n" data-v="sc">Security</button><button class="n" data-v="ct">Contact</button>
+<div style="flex:1"></div><button class="n" id="vp">👁 View portfolio</button><button class="n" id="lo">Sign out</button></aside><main class="am" id="am"></main></div>
+
+<div class="ov" id="ov"><div class="md" id="md"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===== Supabase connection (see README.md) ===== */
+const SUPABASE_URL='https://YOUR-PROJECT-REF.supabase.co'; // Supabase → Project Settings → Data API → Project URL
+const SUPABASE_KEY='sb_publishable_GSuzvR-E-9xMZ3rBkbaWlg_qeH64TAZ'; // publishable key: safe in public code, database rules (RLS) protect the data
+const BUCKET='dashboards',IDLE=20*60e3,MAXFILE=2e6;
+/* admin session lives only in this tab: closing the tab signs you out */
+const ssn=(()=>{try{sessionStorage.setItem('_t','1');sessionStorage.removeItem('_t');return sessionStorage}catch(e){return undefined}})();
+const sb=window.supabase&&!/YOUR-PROJECT-REF/.test(SUPABASE_URL)?supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storage:ssn,persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}}):null;
+
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate=t=>new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),3200)};
+const modal=(h,c)=>{clearTimeout(modal.t);const m=$('#md');m.className='md'+(c?' '+c:'');m.innerHTML=h;$('#ov').classList.add('on');const i=m.querySelector('input,textarea,button');if(i)setTimeout(()=>i.focus(),60)};
+const closeM=()=>{$('#ov').classList.remove('on');clearTimeout(modal.t);modal.t=setTimeout(()=>{$('#md').innerHTML=''},350)};
+$('#ov').onclick=e=>{if(e.target.id==='ov')closeM()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#ov').classList.contains('on'))closeM()});
+
+/* data: loaded from Supabase. Visitors only receive published rows; drafts need an admin session */
+const seedK=['Orders shipped',18492,'','On-time rate',96.8,'%','Avg cycle',8.4,'h','Open exceptions',127,''];
+let S={dash:[],ct:{ph:'',em:''}},state='loading';const htmlCache=new Map();
+const fromRow=r=>({id:r.id,name:r.name,tool:r.tool||'',st:r.status,up:fmtDate(r.updated_at),col:r.color||'#5a9b78',bg:r.bg||'#dcebe2',m:r.metric||'',ml:r.metric_label||'',d:r.description||'',k:Array.isArray(r.kpis)&&r.kpis.length===12?r.kpis:null,file:r.file_path||null});
+async function loadData(){if(!sb){state='off';return}
+const [d,c]=await Promise.all([sb.from('dashboards').select('id,name,tool,status,description,metric,metric_label,kpis,color,bg,file_path,updated_at').order('sort').order('created_at',{ascending:false}),sb.from('site_settings').select('phone,email').eq('id',1).maybeSingle()]);
+if(d.error||c.error){console.error(d.error||c.error);state='err';return}
+S.dash=d.data.map(fromRow);S.ct={ph:(c.data&&c.data.phone)||'',em:(c.data&&c.data.email)||''};state='ok'}
+async function refresh(){await loadData();renderWork();renderContact();if(authed)go(view)}
+const emsg=e=>{const m=(e&&e.message)||'';return /row-level security|permission denied|not authorized|jwt|aal/i.test(m)?'Not allowed. Sign in again and retry.':/rate limit|too many/i.test(m)?'Too many attempts. Wait a few minutes and try again.':m||'Something went wrong. Please try again.'};
+/* RLS silently skips rows you may not change, so confirm a row was actually written */
+async function write(p){const {data,error}=await p.select('id');if(error)return emsg(error);return data&&data.length?'':'Not allowed. Sign in again and retry.'}
+
+/* hero counters + donut */
+$$('[data-n]').forEach(el=>{const n=+el.dataset.n,d=+el.dataset.d||0,s=el.dataset.s||'',t0=performance.now();
+const f=t=>{const p=Math.min((t-t0-500)/1600,1);if(p<0)return requestAnimationFrame(f);const v=n*(1-Math.pow(1-p,3));el.textContent=(el.dataset.c?Math.round(v).toLocaleString():v.toFixed(d))+s;if(p<1)requestAnimationFrame(f)};requestAnimationFrame(f)});
+setTimeout(()=>{$('#s1').setAttribute('stroke-dasharray','146 226');$('#s2').setAttribute('stroke-dasharray','46 226');$('#s3').setAttribute('stroke-dasharray','25 226')},900);
+
+/* public work grid */
+function renderWork(){const p=S.dash.filter(d=>d.st==='pub'),g=$('#workGrid');
+if(state!=='ok'&&!p.length){g.innerHTML=`<p style="color:var(--mut)">${state==='loading'?'Loading dashboards…':'Dashboards could not be loaded right now. Please refresh the page.'}</p>`;return}
+g.innerHTML=p.length?p.map(d=>{const hs=[40,55,45,70,60,85,75].map(h=>h+((d.id*13)%15));
+return `<button class="wk" data-id="${+d.id}"><div class="th" style="background:${esc(d.bg)}">${hs.map(h=>`<div style="--h:${h}%;background:${esc(d.col)}"></div>`).join('')}</div><div class="bd"><span class="pill" style="background:${esc(d.bg)};color:${esc(d.col)}">${esc(d.tool).toUpperCase()}</span><h3 style="margin-top:12px">${esc(d.name)}</h3><p>${esc(d.d||'Interactive operations dashboard.')}</p><div class="ft"><span><b>${esc(d.m||'Live')}</b><small>${esc(d.ml||'demo')}</small></span><span class="ic" style="margin:0;width:34px;height:34px">→</span></div></div></button>`}).join(''):'<p style="color:var(--mut)">New dashboards are coming soon.</p>';
+$$('.wk').forEach(b=>b.onclick=()=>openDemo(+b.dataset.id))}
+function rnd(seed){let x=seed*9301+49297;return()=>{x=(x*9301+49297)%233280;return x/233280}}
+/* uploaded dashboards run sandboxed (no access to this page or the admin session); give them in-memory storage so they don't crash */
+const SHIM='<script>(function(){function m(){var d={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(d,k)?d[k]:null},setItem:function(k,v){d[k]=String(v)},removeItem:function(k){delete d[k]},clear:function(){d={}},key:function(i){return Object.keys(d)[i]||null},get length(){return Object.keys(d).length}}}["localStorage","sessionStorage"].forEach(function(n){try{window[n].length}catch(e){try{Object.defineProperty(window,n,{value:m(),configurable:true})}catch(_){}}})})();<\/script>';
+function withShim(h){const hd=/<head(\s[^>]*)?>/i,ht=/<html(\s[^>]*)?>/i;if(hd.test(h))return h.replace(hd,m=>m+SHIM);if(ht.test(h))return h.replace(ht,m=>m+SHIM);const d=h.match(/^\s*<!doctype[^>]*>/i);return d?d[0]+SHIM+h.slice(d[0].length):SHIM+h}
+async function openDemo(id,range=30,cat='All'){const d=S.dash.find(x=>x.id===id);if(!d)return;
+if(d.file&&!htmlCache.has(d.file)){modal('<p style="margin:0;text-align:center;color:var(--mut)">Loading dashboard…</p>','s');
+const {data,error}=await sb.storage.from(BUCKET).download(d.file);if(error){closeM();return toast('Could not load this dashboard. Please try again.')}htmlCache.set(d.file,await data.text())}
+const html=d.file?htmlCache.get(d.file):'';
+const cats=['All','North','South','West'],n={7:7,30:10,90:12}[range],r=rnd(id*7+range+cats.indexOf(cat)*3);
+const vals=Array.from({length:n},()=>40+r()*60),mult=cat==='All'?1:.34,k=d.k||seedK;
+const kp=[0,3,6,9].map(i=>{const v=k[i+1]*(k[i+2]==='%'||k[i+2]==='h'||k[i+2]==='d'?(.97+r()*.06):mult*(range/30)*(.9+r()*.2));return `<div class="k"><small>${esc(k[i])}</small><b>${(+v.toFixed(1)).toLocaleString()}${esc(k[i+2])}</b></div>`}).join('');
+const rows=['Delhivery','BlueDart','Ecom Express','XpressBees'].map(c=>{const p=(88+r()*11).toFixed(1);return `<tr><td>${c}</td><td>${Math.round(800*r()*mult*range/7+200)}</td><td>${p}%</td><td><div style="height:6px;border-radius:9px;background:var(--line)"><div style="height:100%;width:${p}%;background:${esc(d.col)};border-radius:9px"></div></div></td></tr>`}).join('');
+const body=html?`<iframe sandbox="allow-scripts allow-modals allow-downloads allow-forms allow-popups" allow="fullscreen" allowfullscreen referrerpolicy="no-referrer" srcdoc="${esc(withShim(html))}" title="${esc(d.name)}"></iframe>`:
+`<div class="kg" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">${kp}</div><div class="pn" style="padding:16px;margin-bottom:16px"><small>Trend, last ${range} days (${cat})</small><div class="bars" id="bars">${vals.map(()=>'<div style="height:0"></div>').join('')}</div></div><div class="tw"><table><tr><th>CARRIER</th><th>SHIPMENTS</th><th>ON-TIME</th><th style="width:30%">PERFORMANCE</th></tr>${rows}</table></div>`;
+modal(`<div class="mh"><div><span class="pill" style="background:${esc(d.bg)};color:${esc(d.col)}">${esc(d.tool).toUpperCase()}</span><h2 style="font-size:1.8rem;margin-top:8px">${esc(d.name)}</h2><small style="color:var(--mut)">${html?'Live interactive dashboard':'Demo with sample data'}</small></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:end">${html?'<button class="btn sm" onclick="fsDash()">⛶ Full screen</button>':''}<button class="btn sm" onclick="closeM()">✕ Close</button></div></div>
+${html?'':`<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"><div class="seg2">${[7,30,90].map(x=>`<button class="${x===range?'on':''}" onclick="openDemo(${+id},${x},'${cat}')">${x}d</button>`).join('')}</div><div class="seg2">${cats.map(c=>`<button class="${c===cat?'on':''}" onclick="openDemo(${+id},${range},'${c}')">${c}</button>`).join('')}</div></div>`}${body}`,html?'full':'');
+requestAnimationFrame(()=>setTimeout(()=>$$('#bars div').forEach((b,i)=>{b.style.height=vals[i]+'%';b.title=Math.round(vals[i]*10)}),30))}
+function fsDash(){const f=$('#md iframe');if(!f)return;const rf=f.requestFullscreen||f.webkitRequestFullscreen;if(!rf)return toast('Full screen is not supported in this browser.');try{const p=rf.call(f);if(p&&p.catch)p.catch(()=>toast('Full screen is not available here.'))}catch(e){toast('Full screen is not available here.')}}
+
+/* contact */
+const validEm=s=>/^[^\s@<>"'()]+@[^\s@<>"'()]+\.[^\s@<>"'()]{2,}$/.test(s),digits=s=>String(s||'').replace(/\D/g,'');
+$$('[data-svc]').forEach(a=>a.onclick=()=>{$('#svc').value=a.dataset.svc});
+function renderContact(){const ph=S.ct.ph||'',em=validEm(S.ct.em||'')?S.ct.em:'',dg=digits(ph);
+$('#cdet').innerHTML=(dg?`<a href="tel:${esc(ph.replace(/[^\d+]/g,''))}"><i>📞</i><span><small>Call me</small><b>${esc(ph)}</b></span></a><a href="https://wa.me/${dg}" target="_blank" rel="noopener noreferrer"><i>💬</i><span><small>Message on WhatsApp</small><b>${esc(ph)}</b></span></a>`:'')+(em?`<a href="mailto:${esc(em)}"><i>✉️</i><span><small>Email me</small><b>${esc(em)}</b></span></a>`:'');
+$('#cfb').innerHTML=(em?'<button class="btn p" data-via="mail">✉️ Send by email</button>':'')+(dg?`<button class="btn${em?'':' p'}" data-via="wa">💬 Send on WhatsApp</button>`:'')||'<p style="margin:0;text-align:center;color:var(--mut);font-size:.9rem">Contact details are being set up. Please check back soon.</p>'}
+$('#cf').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),g=k=>String(f.get(k)||'').trim(),em=validEm(S.ct.em||'')?S.ct.em:'',dg=digits(S.ct.ph);
+const via=(e.submitter&&e.submitter.dataset.via)||(em?'mail':'wa');if(via==='mail'&&!em||via==='wa'&&!dg)return toast('Contact details are not set up yet.');
+const subj=`Project brief: ${g('s')} (${g('n')})`,body=`Hi Pranay,\n\n${g('m')}\n\nName: ${g('n')}\nEmail: ${g('e')}${g('p')?'\nPhone: '+g('p'):''}\nService: ${g('s')}`;
+if(via==='wa'){if(!window.open(`https://wa.me/${dg}?text=${encodeURIComponent(subj+'\n\n'+body)}`,'_blank','noopener'))return toast('Allow pop-ups to open WhatsApp.');toast('Opening WhatsApp with your brief. Press send there.')}
+else{location.href=`mailto:${em}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;toast('Opening your email app with your brief. Press send there.')}};
+
+/* admin auth: Supabase email + password, then a required authenticator code (MFA). The database only accepts writes from an MFA-verified admin. */
+let view='ov',authed=false,last=Date.now(),enrollId='',adminEmail='';
+const err=t=>{const x=$('#le');if(x)x.textContent=t};
+const codeForm=(id,label,btn)=>`<form id="${id}" style="display:grid;gap:12px"><label>${label}<input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><button class="btn p" style="justify-content:center">${btn}</button></form><small class="err" id="le"></small>`;
+const codeErr=e=>/rate limit|too many/i.test(e.message||'')?emsg(e):'Wrong or expired code. Check your phone’s clock and try again.';
+const pwFields=()=>`<label>New password<input type="password" id="n1" minlength="12" maxlength="128" required autocomplete="new-password"></label><label>Confirm new password<input type="password" id="n2" minlength="12" maxlength="128" required autocomplete="new-password"></label>`;
+const newPwErr=()=>{const a=$('#n1').value,b=$('#n2').value;return a.length<12?'Use at least 12 characters.':a!==b?'Passwords do not match.':''};
+async function openLogin(){if(!sb)return toast('Admin is not connected to Supabase yet. See README.md.');if(authed)return openAdmin();
+const {data}=await sb.auth.getSession();if(data.session)return afterPassword();
+modal(`<h2 style="font-size:1.6rem;margin-bottom:16px">Admin sign in</h2><form id="lf" style="display:grid;gap:12px"><label>Email<input type="email" id="em" required autocomplete="username"></label><label>Password<input type="password" id="pw" required autocomplete="current-password"></label><button class="btn p" style="justify-content:center">Continue</button></form><small class="err" id="le"></small>`,'s')}
+async function afterPassword(){const {data,error}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();if(error){closeM();return toast(emsg(error))}
+if(data.currentLevel==='aal2')return enter();
+if(data.nextLevel==='aal2')return modal(`<h2 style="font-size:1.6rem;margin-bottom:6px">Two-factor check</h2><p style="color:var(--mut);margin:0 0 16px;font-size:.9rem">Enter the 6-digit code from your authenticator app.</p>${codeForm('tf','Authenticator code','Verify')}`,'s');
+return startEnroll()}
+async function startEnroll(){const l=await sb.auth.mfa.listFactors();if(l.error)return toast(emsg(l.error));
+for(const f of l.data.all||[])if(f.status!=='verified')await sb.auth.mfa.unenroll({factorId:f.id});
+const {data,error}=await sb.auth.mfa.enroll({factorType:'totp',friendlyName:'Viroh Automation admin'});if(error)return toast(emsg(error));
+enrollId=data.id;const key=data.totp.secret||'';
+modal(`<h2 style="font-size:1.5rem;margin-bottom:8px">Set up two-factor</h2><p style="color:var(--mut);margin:0 0 12px;font-size:.9rem">Two-factor is required for admin access. Scan this code with Google Authenticator, Microsoft Authenticator or Authy.</p><img src="${esc(data.totp.qr_code)}" alt="Authenticator QR code" width="180" height="180" style="display:block;margin:0 auto 12px;background:#fff;border-radius:10px;padding:8px"><p style="color:var(--mut);margin:0 0 6px;font-size:.85rem">Or choose <b>Enter a setup key</b> and type:</p><div class="key">${esc((key.match(/.{1,4}/g)||[]).join(' '))}</div><div style="height:14px"></div>${codeForm('ef','Enter the 6-digit code it shows','Turn on and continue')}`,'s')}
+async function enter(){const {data,error}=await sb.rpc('is_admin');if(error||data!==true){await sb.auth.signOut({scope:'local'});closeM();return toast('This account does not have admin access.')}
+const u=await sb.auth.getUser();adminEmail=(u.data&&u.data.user&&u.data.user.email)||'';
+authed=true;last=Date.now();closeM();await refresh();openAdmin()}
+function openAdmin(){$('#admin').classList.add('on');document.body.style.overflow='hidden';go(view)}
+function closeAdmin(){$('#admin').classList.remove('on');document.body.style.overflow='';renderWork();renderContact();if(location.hash==='#admin')try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
+async function signOut(t,scope='local'){authed=false;closeM();closeAdmin();if(sb)await sb.auth.signOut({scope});toast(t);refresh()}
+if(sb)sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&authed){authed=false;closeM();closeAdmin();toast('Your session ended. Please sign in again.')}});
+$('#vp').onclick=closeAdmin;$('#lo').onclick=()=>signOut('Signed out');
+['pointerdown','keydown','mousemove','wheel'].forEach(ev=>addEventListener(ev,()=>{last=Date.now()},{passive:true}));
+setInterval(()=>{if(authed&&Date.now()-last>IDLE)signOut('Signed out after 20 minutes of inactivity.')},30e3);
+const hashAdmin=()=>{if(location.hash==='#admin')openLogin()};addEventListener('hashchange',hashAdmin);$('#adm').onclick=e=>{e.preventDefault();openLogin()};
+
+document.addEventListener('submit',async e=>{const id=e.target.id;if(!['lf','tf','ef','pf','cdf','edf'].includes(id))return;e.preventDefault();
+const btn=e.target.querySelector('button');if(btn)btn.disabled=true;
+try{
+if(id==='lf'){const {error}=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});if(error)return err(/invalid/i.test(error.message)?'Incorrect email or password.':emsg(error));return afterPassword()}
+if(id==='tf'){const l=await sb.auth.mfa.listFactors();const f=l.data&&l.data.totp&&l.data.totp[0];if(!f)return startEnroll();
+const {error}=await sb.auth.mfa.challengeAndVerify({factorId:f.id,code:$('#cd').value.trim()});if(error)return err(codeErr(error));return enter()}
+if(id==='ef'){const {error}=await sb.auth.mfa.challengeAndVerify({factorId:enrollId,code:$('#cd').value.trim()});if(error)return err(codeErr(error));toast('Two-factor authentication is on');return enter()}
+if(!authed)return;
+if(id==='pf'){const x=newPwErr();if(x)return err(x);const {error}=await sb.auth.updateUser({password:$('#n1').value});if(error)return err(emsg(error));closeM();toast('Password updated')}
+if(id==='cdf'){const ph=$('#cph').value.trim(),em=$('#cem').value.trim();
+if(ph&&(!/^\+?[\d\s()-]{8,20}$/.test(ph)||digits(ph).length<8))return toast('Enter the phone number with country code, e.g. +91 98765 43210.');
+if(em&&!validEm(em))return toast('Enter a valid email ID.');const x=await write(sb.from('site_settings').update({phone:ph,email:em}).eq('id',1));if(x)return toast(x);await refresh();toast('Saved. Visitors see the new details now.')}
+if(id==='edf'){const did=+e.target.dataset.id,x=await write(sb.from('dashboards').update({name:$('#e1').value.trim(),tool:$('#e2').value.trim(),description:$('#e3').value.trim(),metric:$('#e4').value.trim(),metric_label:$('#e5').value.trim()}).eq('id',did));if(x)return err(x);closeM();await refresh();toast('Dashboard updated')}
+}finally{if(btn&&btn.isConnected)btn.disabled=false}});
+
+/* admin views */
+$$('.as .n[data-v]').forEach(b=>b.onclick=()=>go(b.dataset.v));
+const T={ov:['Overview','Your portfolio at a glance.'],db:['Dashboards','Upload, publish, and manage your portfolio work.'],sc:['Security','Control access and protect your workspace.'],ct:['Contact','How visitors reach you.']};
+function go(v){if(!authed)return;view=v;$$('.as .n[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+const pub=S.dash.filter(d=>d.st==='pub').length,dr=S.dash.length-pub,ctOk=!!(validEm(S.ct.em||'')||digits(S.ct.ph));
+const rows=S.dash.length?S.dash.map(d=>`<tr><td><b>${esc(d.name)}</b><br><small style="color:var(--mut)">${esc(d.tool)}</small></td><td><span class="st ${d.st==='pub'?'pub':'dr'}">${d.st==='pub'?'Published':'Draft'}</span></td><td>${esc(d.up)}</td><td style="white-space:nowrap"><button class="btn sm" data-a="view" data-id="${+d.id}">Preview</button> <button class="btn sm" data-a="ed" data-id="${+d.id}">Edit</button> <button class="btn sm" data-a="tg" data-id="${+d.id}">${d.st==='pub'?'Unpublish':'Publish'}</button> <button class="btn sm dng" data-a="del" data-id="${+d.id}">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--mut)">No dashboards yet. Upload an HTML dashboard to get started.</td></tr>';
+const table=`<div class="tw"><table><tr><th>DASHBOARD</th><th>STATUS</th><th>UPDATED</th><th></th></tr>${rows}</table></div>`;
+let h=`<div class="top pv"><div><div class="tag">ADMIN WORKSPACE</div><h2>${T[v][0]}</h2><p style="color:var(--mut);margin:6px 0 0">${T[v][1]}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="rf">↻ Refresh</button><button class="btn p" data-a="up">＋ Upload HTML dashboard</button></div></div>`;
+if(v==='ov')h+=`<div class="kg pv"><div class="kc"><small>Published dashboards</small><b>${pub}</b></div><div class="kc"><small>Drafts</small><b>${dr}</b></div><div class="kc"><small>Contact details</small><b style="font-size:1.5rem;color:${ctOk?'var(--gr)':'#b4492a'}">${ctOk?'Set':'Missing'}</b></div><div class="kc"><small>Security</small><b style="font-size:1.5rem;color:var(--gr)">2FA on</b></div></div>
+<div class="box pv"><div class="bh"><h3>Changes go live instantly</h3></div><p class="pad">Everything here is saved to your Supabase database. When you publish a dashboard or change your contact details, every visitor on every device sees it on their next page load. Drafts stay private to you.</p></div>
+<div class="box pv"><div class="bh"><h3>Recent dashboards</h3><button class="btn sm" onclick="go('db')">View all</button></div>${table}</div>`;
+if(v==='db')h+=`<div class="box pv"><div class="bh"><h3>All dashboards</h3></div><div class="drop" id="dz">Drag a file here, or <label style="display:inline;color:var(--gr);cursor:pointer;text-decoration:underline">browse<input type="file" id="fi" hidden accept=".html,.htm,text/html"></label><br><small>Interactive HTML dashboards only (.html, up to 2 MB). They run live in the portfolio.</small></div>${table}</div>`;
+if(v==='sc')h+=`<div class="box pv"><div class="sr"><div><h3>Signed in as</h3><p>${esc(adminEmail)}</p></div></div>
+<div class="sr"><div><h3>Admin password</h3><p>Stored by Supabase Auth, never in this page.</p></div><button class="btn sm" data-a="pw">Change</button></div>
+<div class="sr"><div><h3>Two-factor authentication</h3><p>On and required. The database refuses changes unless you've entered an authenticator code. Lost your phone? In Supabase, open Authentication → Users → your user and remove the MFA factor, then sign in to set it up again.</p></div></div>
+<div class="sr"><div><h3>Sessions</h3><p>Closing this tab or 20 minutes of inactivity signs you out. Use this if you signed in on a device you no longer trust.</p></div><button class="btn sm dng" data-a="soall">Sign out everywhere</button></div>
+<div class="sr"><div><h3>Uploaded dashboards are isolated</h3><p>They run in a sandbox, so their code can't read your admin session or this page.</p></div></div></div>`;
+if(v==='ct')h+=`<div class="box pv"><div class="bh"><h3>Your contact details</h3></div><form id="cdf" class="pad" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end"><label>Phone / WhatsApp (with country code)<input id="cph" type="tel" maxlength="20" value="${esc(S.ct.ph)}" placeholder="+91 98765 43210"></label><label>Email ID<input id="cem" type="email" maxlength="120" value="${esc(S.ct.em)}" placeholder="you@example.com"></label><button class="btn p" style="justify-content:center">Save</button></form>
+<p class="pad" style="padding-top:0">Visitors see Call, WhatsApp and Email buttons. Their project briefs open in their own email app or WhatsApp, addressed to you. Leave a field blank to hide it.</p></div>`;
+$('#am').innerHTML=h;const dz=$('#dz');if(dz){['dragover','dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.toggle('hv',ev==='dragover');if(ev==='drop')upFile(e.dataTransfer.files[0])}));$('#fi').onchange=e=>{upFile(e.target.files[0]);e.target.value=''}}}
+async function upFile(f){if(!f||!authed)return;const ext=f.name.split('.').pop().toLowerCase();
+if(ext!=='html'&&ext!=='htm')return toast('Only interactive HTML dashboards (.html) can be uploaded.');
+if(f.size>MAXFILE)return toast('That file is over 2 MB. Please upload a smaller HTML dashboard.');
+const path=(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2))+'.html';toast('Uploading…');
+const up=await sb.storage.from(BUCKET).upload(path,f,{contentType:'text/html',upsert:false,cacheControl:'3600'});if(up.error)return toast(emsg(up.error));
+const {data,error}=await sb.from('dashboards').insert({name:f.name.replace(/\.[^.]+$/,'').slice(0,80)||'Dashboard',tool:'Interactive HTML',status:'pub',description:'Interactive operations dashboard.',metric:'Live',metric_label:'interactive demo',color:'#5a9b78',bg:'#dcebe2',file_path:path}).select('id').single();
+if(error){await sb.storage.from(BUCKET).remove([path]);return toast(emsg(error))}
+await refresh();go('db');toast('Uploaded and live. Use Edit to change its title and description.');openDemo(data.id)}
+$('#am').onclick=async e=>{const b=e.target.closest('[data-a]');if(!b||!authed)return;const a=b.dataset.a,id=+b.dataset.id,d=S.dash.find(x=>x.id===id);
+if(a==='up'){if(view!=='db')go('db');$('#fi').click()}
+if(a==='rf'){await refresh();toast('Refreshed')}
+if(a==='view'&&d)openDemo(id);
+if(a==='ed'&&d)modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Edit dashboard card</h2><form id="edf" data-id="${+d.id}" style="display:grid;gap:12px"><label>Title<input id="e1" maxlength="80" required value="${esc(d.name)}"></label><label>Tool label<input id="e2" maxlength="30" required value="${esc(d.tool)}"></label><label>Short description<textarea id="e3" rows="3" maxlength="200">${esc(d.d)}</textarea></label><div class="r2"><label>Headline number<input id="e4" maxlength="12" value="${esc(d.m)}"></label><label>Number label<input id="e5" maxlength="40" value="${esc(d.ml)}"></label></div><button class="btn p" style="justify-content:center">Save changes</button></form><small class="err" id="le"></small>`,'s');
+if(a==='tg'&&d){const st=d.st==='pub'?'dr':'pub',x=await write(sb.from('dashboards').update({status:st}).eq('id',id));if(x)return toast(x);await refresh();toast(st==='pub'?'Published. Visitors can see it now.':'Moved to drafts')}
+if(a==='del'&&d&&confirm(`Delete "${d.name}"? This can't be undone.`)){const x=await write(sb.from('dashboards').delete().eq('id',id));if(x)return toast(x);if(d.file){await sb.storage.from(BUCKET).remove([d.file]);htmlCache.delete(d.file)}await refresh();toast('Deleted')}
+if(a==='pw')modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Change password</h2><form id="pf" style="display:grid;gap:12px">${pwFields()}<button class="btn p" style="justify-content:center">Save password</button></form><small class="err" id="le"></small>`,'s');
+if(a==='soall'&&confirm('Sign out on every device, including this one?'))signOut('Signed out on all devices','global')};
+
+renderWork();renderContact();
+if(!sb)console.warn('Supabase is not configured yet: set SUPABASE_URL near the top of the script.');
+refresh().then(hashAdmin);
+</script>
+</body>
+</html>
