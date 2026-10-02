@@ -154,36 +154,45 @@ code{font:.9em ui-monospace,Consolas,monospace;background:var(--bg);border:1px s
 <div class="ov" id="ov"><div class="md" id="md"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ===== Supabase connection (see README.md) ===== */
-const SUPABASE_URL='https://YOUR-PROJECT-REF.supabase.co'; // Supabase → Project Settings → Data API → Project URL
-const SUPABASE_KEY='sb_publishable_GSuzvR-E-9xMZ3rBkbaWlg_qeH64TAZ'; // publishable key: safe in public code, database rules (RLS) protect the data
-const BUCKET='dashboards',IDLE=20*60e3,MAXFILE=2e6;
-/* admin session lives only in this tab: closing the tab signs you out */
-const ssn=(()=>{try{sessionStorage.setItem('_t','1');sessionStorage.removeItem('_t');return sessionStorage}catch(e){return undefined}})();
-const sb=window.supabase&&!/YOUR-PROJECT-REF/.test(SUPABASE_URL)?supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storage:ssn,persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}}):null;
-
+const PUB=/*PUB*/null/*END*/;
+const SRC='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KEY='fm_portfolio_v1',IDLE=20*60e3,MAXTRY=5,LOCK=5*60e3;
+const seed={dash:[
+{id:1,name:'Fulfillment Control Tower',tool:'Power BI',st:'pub',up:'May 20, 2025',col:'#e9946a',bg:'#f6e5da',m:'28%',ml:'faster issue detection',d:'Live visibility into order flow, SLA risk, carrier performance, and fulfillment bottlenecks.',k:['Orders shipped',18492,'','On-time rate',96.8,'%','Avg cycle',8.4,'h','Open exceptions',127,'']},
+{id:2,name:'Inventory Health Monitor',tool:'Tableau',st:'pub',up:'May 18, 2025',col:'#6f98c9',bg:'#e0e8f3',m:'$184K',ml:'working capital identified',d:'A single view of aging stock, sell-through, cover days, and replenishment opportunities.',k:['Stock value',184,'K','Cover days',34,'d','Sell-through',72,'%','Aged 90d+',9,'%']},
+{id:3,name:'Warehouse Productivity',tool:'Advanced Excel',st:'dr',up:'May 12, 2025',col:'#5a9b78',bg:'#dcebe2',m:'16%',ml:'productivity improvement',d:'Shift-level labor planning and productivity tracking across pick, pack, and dispatch.',k:['Units / hour',112,'','Utilization',87,'%','Labor cost',41,'K','Pick accuracy',99.2,'%']}],
+ct:{ph:'',em:''}};
+const clone=o=>JSON.parse(JSON.stringify(o));
+let S=null;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!Array.isArray(S.dash))S=clone(PUB||seed);
+S.sec=S.sec||{};S.ct=S.ct||{ph:'',em:''};
+if(S.ct.ph==='+91 00000 00000')S.ct.ph='';if(S.ct.em==='your.email@example.com')S.ct.em='';
+delete S.sec.appr;delete S.sec.tfa;delete S.msg;
+const isOwner=()=>!!(S.sec.hash||S.sec.pw);
+const save=()=>{if(!isOwner())return true;try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){return false}};
 const fmtDate=t=>new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
 const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),3200)};
 const modal=(h,c)=>{clearTimeout(modal.t);const m=$('#md');m.className='md'+(c?' '+c:'');m.innerHTML=h;$('#ov').classList.add('on');const i=m.querySelector('input,textarea,button');if(i)setTimeout(()=>i.focus(),60)};
 const closeM=()=>{$('#ov').classList.remove('on');clearTimeout(modal.t);modal.t=setTimeout(()=>{$('#md').innerHTML=''},350)};
 $('#ov').onclick=e=>{if(e.target.id==='ov')closeM()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#ov').classList.contains('on'))closeM()});
 
-/* data: loaded from Supabase. Visitors only receive published rows; drafts need an admin session */
-const seedK=['Orders shipped',18492,'','On-time rate',96.8,'%','Avg cycle',8.4,'h','Open exceptions',127,''];
-let S={dash:[],ct:{ph:'',em:''}},state='loading';const htmlCache=new Map();
-const fromRow=r=>({id:r.id,name:r.name,tool:r.tool||'',st:r.status,up:fmtDate(r.updated_at),col:r.color||'#5a9b78',bg:r.bg||'#dcebe2',m:r.metric||'',ml:r.metric_label||'',d:r.description||'',k:Array.isArray(r.kpis)&&r.kpis.length===12?r.kpis:null,file:r.file_path||null});
-async function loadData(){if(!sb){state='off';return}
-const [d,c]=await Promise.all([sb.from('dashboards').select('id,name,tool,status,description,metric,metric_label,kpis,color,bg,file_path,updated_at').order('sort').order('created_at',{ascending:false}),sb.from('site_settings').select('phone,email').eq('id',1).maybeSingle()]);
-if(d.error||c.error){console.error(d.error||c.error);state='err';return}
-S.dash=d.data.map(fromRow);S.ct={ph:(c.data&&c.data.phone)||'',em:(c.data&&c.data.email)||''};state='ok'}
-async function refresh(){await loadData();renderWork();renderContact();if(authed)go(view)}
-const emsg=e=>{const m=(e&&e.message)||'';return /row-level security|permission denied|not authorized|jwt|aal/i.test(m)?'Not allowed. Sign in again and retry.':/rate limit|too many/i.test(m)?'Too many attempts. Wait a few minutes and try again.':m||'Something went wrong. Please try again.'};
-/* RLS silently skips rows you may not change, so confirm a row was actually written */
-async function write(p){const {data,error}=await p.select('id');if(error)return emsg(error);return data&&data.length?'':'Not allowed. Sign in again and retry.'}
+/* crypto: password hashing (PBKDF2) and authenticator codes (TOTP) */
+const te=new TextEncoder(),b64=u=>btoa(String.fromCharCode(...new Uint8Array(u))),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const hasCrypto=()=>!!(window.crypto&&crypto.subtle);
+async function pwHash(pw,salt){const k=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveBits']);return b64(await crypto.subtle.deriveBits({name:'PBKDF2',salt:unb64(salt),iterations:210000,hash:'SHA-256'},k,256))}
+async function setPw(pw){const salt=b64(crypto.getRandomValues(new Uint8Array(16)));S.sec.hash=await pwHash(pw,salt);S.sec.salt=salt;delete S.sec.pw;return save()}
+async function checkPw(pw){return S.sec.hash?await pwHash(pw,S.sec.salt)===S.sec.hash:pw===S.sec.pw}
+const B32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const b32enc=u=>{let b='',o='';u.forEach(x=>b+=x.toString(2).padStart(8,'0'));for(let i=0;i+5<=b.length;i+=5)o+=B32[parseInt(b.slice(i,i+5),2)];return o};
+const b32dec=s=>{let b='';for(const c of s)b+=B32.indexOf(c).toString(2).padStart(5,'0');return Uint8Array.from(b.match(/.{8}/g)||[],x=>parseInt(x,2))};
+async function totp(sec,c){const k=await crypto.subtle.importKey('raw',b32dec(sec),{name:'HMAC',hash:'SHA-1'},false,['sign']);const m=new DataView(new ArrayBuffer(8));m.setUint32(0,Math.floor(c/4294967296));m.setUint32(4,c>>>0);
+const h=new Uint8Array(await crypto.subtle.sign('HMAC',k,m.buffer)),o=h[19]&15;return String((((h[o]&127)<<24)|(h[o+1]<<16)|(h[o+2]<<8)|h[o+3])%1e6).padStart(6,'0')}
+async function checkCode(sec,code){code=String(code).replace(/\s/g,'');if(!/^\d{6}$/.test(code))return false;const c=Math.floor(Date.now()/3e4);for(const d of[-1,0,1])if(await totp(sec,c+d)===code)return true;return false}
+const lockedMin=()=>{const l=S.sec.lock||0;return l>Date.now()?Math.ceil((l-Date.now())/60e3):0};
+function failTry(){S.sec.fails=(S.sec.fails||0)+1;if(S.sec.fails>=MAXTRY){S.sec.lock=Date.now()+LOCK;S.sec.fails=0}save();return lockedMin()?`Too many attempts. Sign-in is locked for ${lockedMin()} minutes.`:`${MAXTRY-S.sec.fails} attempt(s) left.`}
 
 /* hero counters + donut */
 $$('[data-n]').forEach(el=>{const n=+el.dataset.n,d=+el.dataset.d||0,s=el.dataset.s||'',t0=performance.now();
@@ -191,27 +200,22 @@ const f=t=>{const p=Math.min((t-t0-500)/1600,1);if(p<0)return requestAnimationFr
 setTimeout(()=>{$('#s1').setAttribute('stroke-dasharray','146 226');$('#s2').setAttribute('stroke-dasharray','46 226');$('#s3').setAttribute('stroke-dasharray','25 226')},900);
 
 /* public work grid */
-function renderWork(){const p=S.dash.filter(d=>d.st==='pub'),g=$('#workGrid');
-if(state!=='ok'&&!p.length){g.innerHTML=`<p style="color:var(--mut)">${state==='loading'?'Loading dashboards…':'Dashboards could not be loaded right now. Please refresh the page.'}</p>`;return}
-g.innerHTML=p.length?p.map(d=>{const hs=[40,55,45,70,60,85,75].map(h=>h+((d.id*13)%15));
+function renderWork(){const p=S.dash.filter(d=>d.st==='pub');$('#workGrid').innerHTML=p.length?p.map(d=>{const hs=[40,55,45,70,60,85,75].map(h=>h+((d.id*13)%15));
 return `<button class="wk" data-id="${+d.id}"><div class="th" style="background:${esc(d.bg)}">${hs.map(h=>`<div style="--h:${h}%;background:${esc(d.col)}"></div>`).join('')}</div><div class="bd"><span class="pill" style="background:${esc(d.bg)};color:${esc(d.col)}">${esc(d.tool).toUpperCase()}</span><h3 style="margin-top:12px">${esc(d.name)}</h3><p>${esc(d.d||'Interactive operations dashboard.')}</p><div class="ft"><span><b>${esc(d.m||'Live')}</b><small>${esc(d.ml||'demo')}</small></span><span class="ic" style="margin:0;width:34px;height:34px">→</span></div></div></button>`}).join(''):'<p style="color:var(--mut)">New dashboards are coming soon.</p>';
 $$('.wk').forEach(b=>b.onclick=()=>openDemo(+b.dataset.id))}
 function rnd(seed){let x=seed*9301+49297;return()=>{x=(x*9301+49297)%233280;return x/233280}}
-/* uploaded dashboards run sandboxed (no access to this page or the admin session); give them in-memory storage so they don't crash */
+/* uploaded dashboards run sandboxed (no access to this page's data); give them in-memory storage so they don't crash */
 const SHIM='<script>(function(){function m(){var d={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(d,k)?d[k]:null},setItem:function(k,v){d[k]=String(v)},removeItem:function(k){delete d[k]},clear:function(){d={}},key:function(i){return Object.keys(d)[i]||null},get length(){return Object.keys(d).length}}}["localStorage","sessionStorage"].forEach(function(n){try{window[n].length}catch(e){try{Object.defineProperty(window,n,{value:m(),configurable:true})}catch(_){}}})})();<\/script>';
 function withShim(h){const hd=/<head(\s[^>]*)?>/i,ht=/<html(\s[^>]*)?>/i;if(hd.test(h))return h.replace(hd,m=>m+SHIM);if(ht.test(h))return h.replace(ht,m=>m+SHIM);const d=h.match(/^\s*<!doctype[^>]*>/i);return d?d[0]+SHIM+h.slice(d[0].length):SHIM+h}
-async function openDemo(id,range=30,cat='All'){const d=S.dash.find(x=>x.id===id);if(!d)return;
-if(d.file&&!htmlCache.has(d.file)){modal('<p style="margin:0;text-align:center;color:var(--mut)">Loading dashboard…</p>','s');
-const {data,error}=await sb.storage.from(BUCKET).download(d.file);if(error){closeM();return toast('Could not load this dashboard. Please try again.')}htmlCache.set(d.file,await data.text())}
-const html=d.file?htmlCache.get(d.file):'';
+function openDemo(id,range=30,cat='All'){const d=S.dash.find(x=>x.id===id);if(!d)return;
 const cats=['All','North','South','West'],n={7:7,30:10,90:12}[range],r=rnd(id*7+range+cats.indexOf(cat)*3);
-const vals=Array.from({length:n},()=>40+r()*60),mult=cat==='All'?1:.34,k=d.k||seedK;
+const vals=Array.from({length:n},()=>40+r()*60),mult=cat==='All'?1:.34,k=d.k||seed.dash[0].k;
 const kp=[0,3,6,9].map(i=>{const v=k[i+1]*(k[i+2]==='%'||k[i+2]==='h'||k[i+2]==='d'?(.97+r()*.06):mult*(range/30)*(.9+r()*.2));return `<div class="k"><small>${esc(k[i])}</small><b>${(+v.toFixed(1)).toLocaleString()}${esc(k[i+2])}</b></div>`}).join('');
 const rows=['Delhivery','BlueDart','Ecom Express','XpressBees'].map(c=>{const p=(88+r()*11).toFixed(1);return `<tr><td>${c}</td><td>${Math.round(800*r()*mult*range/7+200)}</td><td>${p}%</td><td><div style="height:6px;border-radius:9px;background:var(--line)"><div style="height:100%;width:${p}%;background:${esc(d.col)};border-radius:9px"></div></div></td></tr>`}).join('');
-const body=html?`<iframe sandbox="allow-scripts allow-modals allow-downloads allow-forms allow-popups" allow="fullscreen" allowfullscreen referrerpolicy="no-referrer" srcdoc="${esc(withShim(html))}" title="${esc(d.name)}"></iframe>`:
+const body=d.html?`<iframe sandbox="allow-scripts allow-modals allow-downloads allow-forms allow-popups" allow="fullscreen" allowfullscreen referrerpolicy="no-referrer" srcdoc="${esc(withShim(d.html))}" title="${esc(d.name)}"></iframe>`:
 `<div class="kg" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">${kp}</div><div class="pn" style="padding:16px;margin-bottom:16px"><small>Trend, last ${range} days (${cat})</small><div class="bars" id="bars">${vals.map(()=>'<div style="height:0"></div>').join('')}</div></div><div class="tw"><table><tr><th>CARRIER</th><th>SHIPMENTS</th><th>ON-TIME</th><th style="width:30%">PERFORMANCE</th></tr>${rows}</table></div>`;
-modal(`<div class="mh"><div><span class="pill" style="background:${esc(d.bg)};color:${esc(d.col)}">${esc(d.tool).toUpperCase()}</span><h2 style="font-size:1.8rem;margin-top:8px">${esc(d.name)}</h2><small style="color:var(--mut)">${html?'Live interactive dashboard':'Demo with sample data'}</small></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:end">${html?'<button class="btn sm" onclick="fsDash()">⛶ Full screen</button>':''}<button class="btn sm" onclick="closeM()">✕ Close</button></div></div>
-${html?'':`<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"><div class="seg2">${[7,30,90].map(x=>`<button class="${x===range?'on':''}" onclick="openDemo(${+id},${x},'${cat}')">${x}d</button>`).join('')}</div><div class="seg2">${cats.map(c=>`<button class="${c===cat?'on':''}" onclick="openDemo(${+id},${range},'${c}')">${c}</button>`).join('')}</div></div>`}${body}`,html?'full':'');
+modal(`<div class="mh"><div><span class="pill" style="background:${esc(d.bg)};color:${esc(d.col)}">${esc(d.tool).toUpperCase()}</span><h2 style="font-size:1.8rem;margin-top:8px">${esc(d.name)}</h2><small style="color:var(--mut)">${d.html?'Live interactive dashboard':'Demo with sample data'}</small></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:end">${d.html?'<button class="btn sm" onclick="fsDash()">⛶ Full screen</button>':''}<button class="btn sm" onclick="closeM()">✕ Close</button></div></div>
+${d.html?'':`<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"><div class="seg2">${[7,30,90].map(x=>`<button class="${x===range?'on':''}" onclick="openDemo(${id},${x},'${cat}')">${x}d</button>`).join('')}</div><div class="seg2">${cats.map(c=>`<button class="${c===cat?'on':''}" onclick="openDemo(${id},${range},'${c}')">${c}</button>`).join('')}</div></div>`}${body}`,d.html?'full':'');
 requestAnimationFrame(()=>setTimeout(()=>$$('#bars div').forEach((b,i)=>{b.style.height=vals[i]+'%';b.title=Math.round(vals[i]*10)}),30))}
 function fsDash(){const f=$('#md iframe');if(!f)return;const rf=f.requestFullscreen||f.webkitRequestFullscreen;if(!rf)return toast('Full screen is not supported in this browser.');try{const p=rf.call(f);if(p&&p.catch)p.catch(()=>toast('Full screen is not available here.'))}catch(e){toast('Full screen is not available here.')}}
 
@@ -227,93 +231,86 @@ const subj=`Project brief: ${g('s')} (${g('n')})`,body=`Hi Pranay,\n\n${g('m')}\
 if(via==='wa'){if(!window.open(`https://wa.me/${dg}?text=${encodeURIComponent(subj+'\n\n'+body)}`,'_blank','noopener'))return toast('Allow pop-ups to open WhatsApp.');toast('Opening WhatsApp with your brief. Press send there.')}
 else{location.href=`mailto:${em}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;toast('Opening your email app with your brief. Press send there.')}};
 
-/* admin auth: Supabase email + password, then a required authenticator code (MFA). The database only accepts writes from an MFA-verified admin. */
-let view='ov',authed=false,last=Date.now(),enrollId='',adminEmail='';
+/* admin auth */
+let view='ov',authed=false,last=Date.now(),pend='';
 const err=t=>{const x=$('#le');if(x)x.textContent=t};
-const codeForm=(id,label,btn)=>`<form id="${id}" style="display:grid;gap:12px"><label>${label}<input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><button class="btn p" style="justify-content:center">${btn}</button></form><small class="err" id="le"></small>`;
-const codeErr=e=>/rate limit|too many/i.test(e.message||'')?emsg(e):'Wrong or expired code. Check your phone’s clock and try again.';
-const pwFields=()=>`<label>New password<input type="password" id="n1" minlength="12" maxlength="128" required autocomplete="new-password"></label><label>Confirm new password<input type="password" id="n2" minlength="12" maxlength="128" required autocomplete="new-password"></label>`;
-const newPwErr=()=>{const a=$('#n1').value,b=$('#n2').value;return a.length<12?'Use at least 12 characters.':a!==b?'Passwords do not match.':''};
-async function openLogin(){if(!sb)return toast('Admin is not connected to Supabase yet. See README.md.');if(authed)return openAdmin();
-const {data}=await sb.auth.getSession();if(data.session)return afterPassword();
-modal(`<h2 style="font-size:1.6rem;margin-bottom:16px">Admin sign in</h2><form id="lf" style="display:grid;gap:12px"><label>Email<input type="email" id="em" required autocomplete="username"></label><label>Password<input type="password" id="pw" required autocomplete="current-password"></label><button class="btn p" style="justify-content:center">Continue</button></form><small class="err" id="le"></small>`,'s')}
-async function afterPassword(){const {data,error}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();if(error){closeM();return toast(emsg(error))}
-if(data.currentLevel==='aal2')return enter();
-if(data.nextLevel==='aal2')return modal(`<h2 style="font-size:1.6rem;margin-bottom:6px">Two-factor check</h2><p style="color:var(--mut);margin:0 0 16px;font-size:.9rem">Enter the 6-digit code from your authenticator app.</p>${codeForm('tf','Authenticator code','Verify')}`,'s');
-return startEnroll()}
-async function startEnroll(){const l=await sb.auth.mfa.listFactors();if(l.error)return toast(emsg(l.error));
-for(const f of l.data.all||[])if(f.status!=='verified')await sb.auth.mfa.unenroll({factorId:f.id});
-const {data,error}=await sb.auth.mfa.enroll({factorType:'totp',friendlyName:'Viroh Automation admin'});if(error)return toast(emsg(error));
-enrollId=data.id;const key=data.totp.secret||'';
-modal(`<h2 style="font-size:1.5rem;margin-bottom:8px">Set up two-factor</h2><p style="color:var(--mut);margin:0 0 12px;font-size:.9rem">Two-factor is required for admin access. Scan this code with Google Authenticator, Microsoft Authenticator or Authy.</p><img src="${esc(data.totp.qr_code)}" alt="Authenticator QR code" width="180" height="180" style="display:block;margin:0 auto 12px;background:#fff;border-radius:10px;padding:8px"><p style="color:var(--mut);margin:0 0 6px;font-size:.85rem">Or choose <b>Enter a setup key</b> and type:</p><div class="key">${esc((key.match(/.{1,4}/g)||[]).join(' '))}</div><div style="height:14px"></div>${codeForm('ef','Enter the 6-digit code it shows','Turn on and continue')}`,'s')}
-async function enter(){const {data,error}=await sb.rpc('is_admin');if(error||data!==true){await sb.auth.signOut({scope:'local'});closeM();return toast('This account does not have admin access.')}
-const u=await sb.auth.getUser();adminEmail=(u.data&&u.data.user&&u.data.user.email)||'';
-authed=true;last=Date.now();closeM();await refresh();openAdmin()}
+const pwFields=(cur)=>`${cur?'<label>Current password<input type="password" id="n0" required autocomplete="current-password"></label>':''}<label>New password<input type="password" id="n1" minlength="8" maxlength="128" required autocomplete="new-password"></label><label>Confirm new password<input type="password" id="n2" minlength="8" maxlength="128" required autocomplete="new-password"></label>`;
+const newPwErr=()=>{const a=$('#n1').value,b=$('#n2').value;return a.length<8?'Use at least 8 characters.':a!==b?'Passwords do not match.':a==='admin123'?'Choose a password other than the old demo password.':''};
+function openLogin(){if(authed)return openAdmin();if(!hasCrypto())return toast('Admin sign-in needs a secure (https) connection.');
+if(!isOwner())return modal(`<h2 style="font-size:1.6rem;margin-bottom:6px">Create admin password</h2><p style="color:var(--mut);margin:0 0 16px;font-size:.9rem">First sign-in on this browser. It's saved here only as a secure hash.</p><form id="cpf" style="display:grid;gap:12px">${pwFields()}<button class="btn p" style="justify-content:center">Create and continue</button></form><small class="err" id="le"></small>`,'s');
+modal(`<h2 style="font-size:1.6rem;margin-bottom:16px">Admin sign in</h2><form id="lf" style="display:grid;gap:12px"><label>Password<input type="password" id="pw" required autocomplete="current-password"></label><button class="btn p" style="justify-content:center">Continue</button></form><small class="err" id="le">${lockedMin()?`Too many attempts. Try again in ${lockedMin()} minutes.`:''}</small>`,'s')}
+function next2fa(){if(!S.sec.totp)return enter();modal(`<h2 style="font-size:1.6rem;margin-bottom:6px">Two-factor check</h2><p style="color:var(--mut);margin:0 0 16px;font-size:.9rem">Enter the 6-digit code from your authenticator app.</p><form id="tf" style="display:grid;gap:12px"><input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"><button class="btn p" style="justify-content:center">Verify</button></form><small class="err" id="le"></small>`,'s')}
+function enter(){authed=true;last=Date.now();closeM();openAdmin()}
 function openAdmin(){$('#admin').classList.add('on');document.body.style.overflow='hidden';go(view)}
 function closeAdmin(){$('#admin').classList.remove('on');document.body.style.overflow='';renderWork();renderContact();if(location.hash==='#admin')try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
-async function signOut(t,scope='local'){authed=false;closeM();closeAdmin();if(sb)await sb.auth.signOut({scope});toast(t);refresh()}
-if(sb)sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&authed){authed=false;closeM();closeAdmin();toast('Your session ended. Please sign in again.')}});
+function signOut(t){authed=false;closeM();closeAdmin();toast(t)}
 $('#vp').onclick=closeAdmin;$('#lo').onclick=()=>signOut('Signed out');
 ['pointerdown','keydown','mousemove','wheel'].forEach(ev=>addEventListener(ev,()=>{last=Date.now()},{passive:true}));
 setInterval(()=>{if(authed&&Date.now()-last>IDLE)signOut('Signed out after 20 minutes of inactivity.')},30e3);
 const hashAdmin=()=>{if(location.hash==='#admin')openLogin()};addEventListener('hashchange',hashAdmin);$('#adm').onclick=e=>{e.preventDefault();openLogin()};
 
-document.addEventListener('submit',async e=>{const id=e.target.id;if(!['lf','tf','ef','pf','cdf','edf'].includes(id))return;e.preventDefault();
+document.addEventListener('submit',async e=>{const id=e.target.id;if(!['cpf','lf','fpf','tf','pf','tsf','tdf','cdf','edf'].includes(id))return;e.preventDefault();
 const btn=e.target.querySelector('button');if(btn)btn.disabled=true;
 try{
-if(id==='lf'){const {error}=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});if(error)return err(/invalid/i.test(error.message)?'Incorrect email or password.':emsg(error));return afterPassword()}
-if(id==='tf'){const l=await sb.auth.mfa.listFactors();const f=l.data&&l.data.totp&&l.data.totp[0];if(!f)return startEnroll();
-const {error}=await sb.auth.mfa.challengeAndVerify({factorId:f.id,code:$('#cd').value.trim()});if(error)return err(codeErr(error));return enter()}
-if(id==='ef'){const {error}=await sb.auth.mfa.challengeAndVerify({factorId:enrollId,code:$('#cd').value.trim()});if(error)return err(codeErr(error));toast('Two-factor authentication is on');return enter()}
+if(id==='cpf'||id==='fpf'){const x=newPwErr();if(x)return err(x);if(!await setPw($('#n1').value))return err('Could not save. Browser storage may be full or blocked.');if(id==='cpf')return enter();return next2fa()}
+if(id==='lf'){if(lockedMin())return err(`Too many attempts. Try again in ${lockedMin()} minutes.`);const v=$('#pw').value;
+if(!await checkPw(v))return err('Incorrect password. '+failTry());S.sec.fails=0;save();
+if(!S.sec.hash){if(v==='admin123')return modal(`<h2 style="font-size:1.5rem;margin-bottom:6px">Set a new password</h2><p style="color:var(--mut);margin:0 0 16px;font-size:.9rem">The demo password is public. Choose your own to continue.</p><form id="fpf" style="display:grid;gap:12px">${pwFields()}<button class="btn p" style="justify-content:center">Save and continue</button></form><small class="err" id="le"></small>`,'s');await setPw(v)}
+return next2fa()}
+if(id==='tf'){if(lockedMin())return err(`Too many attempts. Try again in ${lockedMin()} minutes.`);if(!await checkCode(S.sec.totp,$('#cd').value))return err('Wrong or expired code. '+failTry());S.sec.fails=0;save();return enter()}
 if(!authed)return;
-if(id==='pf'){const x=newPwErr();if(x)return err(x);const {error}=await sb.auth.updateUser({password:$('#n1').value});if(error)return err(emsg(error));closeM();toast('Password updated')}
+if(id==='pf'){if(!await checkPw($('#n0').value))return err('Current password is incorrect.');const x=newPwErr();if(x)return err(x);await setPw($('#n1').value);closeM();toast('Password updated')}
+if(id==='tsf'){if(!await checkCode(pend,$('#cd').value))return err('That code didn’t match. Check the key and your phone’s clock, then try again.');S.sec.totp=pend;pend='';save();closeM();go('sc');toast('Two-factor authentication is on')}
+if(id==='tdf'){if(!await checkCode(S.sec.totp,$('#cd').value))return err('Wrong or expired code.');delete S.sec.totp;save();closeM();go('sc');toast('Two-factor authentication is off')}
 if(id==='cdf'){const ph=$('#cph').value.trim(),em=$('#cem').value.trim();
 if(ph&&(!/^\+?[\d\s()-]{8,20}$/.test(ph)||digits(ph).length<8))return toast('Enter the phone number with country code, e.g. +91 98765 43210.');
-if(em&&!validEm(em))return toast('Enter a valid email ID.');const x=await write(sb.from('site_settings').update({phone:ph,email:em}).eq('id',1));if(x)return toast(x);await refresh();toast('Saved. Visitors see the new details now.')}
-if(id==='edf'){const did=+e.target.dataset.id,x=await write(sb.from('dashboards').update({name:$('#e1').value.trim(),tool:$('#e2').value.trim(),description:$('#e3').value.trim(),metric:$('#e4').value.trim(),metric_label:$('#e5').value.trim()}).eq('id',did));if(x)return err(x);closeM();await refresh();toast('Dashboard updated')}
+if(em&&!validEm(em))return toast('Enter a valid email ID.');S.ct={ph,em};save();renderContact();go('ct');toast('Saved. Download the site to publish it.')}
+if(id==='edf'){const d=S.dash.find(x=>x.id===+e.target.dataset.id);if(!d)return closeM();d.name=$('#e1').value.trim()||d.name;d.tool=$('#e2').value.trim()||d.tool;d.d=$('#e3').value.trim();d.m=$('#e4').value.trim();d.ml=$('#e5').value.trim();d.up=fmtDate(Date.now());save();closeM();go(view);toast('Dashboard updated')}
 }finally{if(btn&&btn.isConnected)btn.disabled=false}});
 
 /* admin views */
 $$('.as .n[data-v]').forEach(b=>b.onclick=()=>go(b.dataset.v));
 const T={ov:['Overview','Your portfolio at a glance.'],db:['Dashboards','Upload, publish, and manage your portfolio work.'],sc:['Security','Control access and protect your workspace.'],ct:['Contact','How visitors reach you.']};
 function go(v){if(!authed)return;view=v;$$('.as .n[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-const pub=S.dash.filter(d=>d.st==='pub').length,dr=S.dash.length-pub,ctOk=!!(validEm(S.ct.em||'')||digits(S.ct.ph));
+const pub=S.dash.filter(d=>d.st==='pub').length,dr=S.dash.length-pub,ctOk=!!(validEm(S.ct.em||'')||digits(S.ct.ph)),secOk=!!(S.sec.hash&&S.sec.totp);
 const rows=S.dash.length?S.dash.map(d=>`<tr><td><b>${esc(d.name)}</b><br><small style="color:var(--mut)">${esc(d.tool)}</small></td><td><span class="st ${d.st==='pub'?'pub':'dr'}">${d.st==='pub'?'Published':'Draft'}</span></td><td>${esc(d.up)}</td><td style="white-space:nowrap"><button class="btn sm" data-a="view" data-id="${+d.id}">Preview</button> <button class="btn sm" data-a="ed" data-id="${+d.id}">Edit</button> <button class="btn sm" data-a="tg" data-id="${+d.id}">${d.st==='pub'?'Unpublish':'Publish'}</button> <button class="btn sm dng" data-a="del" data-id="${+d.id}">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--mut)">No dashboards yet. Upload an HTML dashboard to get started.</td></tr>';
 const table=`<div class="tw"><table><tr><th>DASHBOARD</th><th>STATUS</th><th>UPDATED</th><th></th></tr>${rows}</table></div>`;
-let h=`<div class="top pv"><div><div class="tag">ADMIN WORKSPACE</div><h2>${T[v][0]}</h2><p style="color:var(--mut);margin:6px 0 0">${T[v][1]}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="rf">↻ Refresh</button><button class="btn p" data-a="up">＋ Upload HTML dashboard</button></div></div>`;
-if(v==='ov')h+=`<div class="kg pv"><div class="kc"><small>Published dashboards</small><b>${pub}</b></div><div class="kc"><small>Drafts</small><b>${dr}</b></div><div class="kc"><small>Contact details</small><b style="font-size:1.5rem;color:${ctOk?'var(--gr)':'#b4492a'}">${ctOk?'Set':'Missing'}</b></div><div class="kc"><small>Security</small><b style="font-size:1.5rem;color:var(--gr)">2FA on</b></div></div>
-<div class="box pv"><div class="bh"><h3>Changes go live instantly</h3></div><p class="pad">Everything here is saved to your Supabase database. When you publish a dashboard or change your contact details, every visitor on every device sees it on their next page load. Drafts stay private to you.</p></div>
+let h=`<div class="top pv"><div><div class="tag">ADMIN WORKSPACE</div><h2>${T[v][0]}</h2><p style="color:var(--mut);margin:6px 0 0">${T[v][1]}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="exp">⬇ Download site</button><button class="btn p" data-a="up">＋ Upload HTML dashboard</button></div></div>`;
+if(v==='ov')h+=`<div class="kg pv"><div class="kc"><small>Published dashboards</small><b>${pub}</b></div><div class="kc"><small>Drafts</small><b>${dr}</b></div><div class="kc"><small>Contact details</small><b style="font-size:1.5rem;color:${ctOk?'var(--gr)':'#b4492a'}">${ctOk?'Set':'Missing'}</b></div><div class="kc"><small>Security</small><b style="font-size:1.5rem;color:${secOk?'var(--gr)':'#b4492a'}">${secOk?'Protected':'Add 2FA'}</b></div></div>
+<div class="box pv"><div class="bh"><h3>Publishing your changes</h3></div><p class="pad">Changes you make here are saved in this browser only. When you're ready, click <b>Download site</b> and upload the downloaded <code>index.html</code> to your web host. Visitors then see your published dashboards and contact details.</p></div>
 <div class="box pv"><div class="bh"><h3>Recent dashboards</h3><button class="btn sm" onclick="go('db')">View all</button></div>${table}</div>`;
 if(v==='db')h+=`<div class="box pv"><div class="bh"><h3>All dashboards</h3></div><div class="drop" id="dz">Drag a file here, or <label style="display:inline;color:var(--gr);cursor:pointer;text-decoration:underline">browse<input type="file" id="fi" hidden accept=".html,.htm,text/html"></label><br><small>Interactive HTML dashboards only (.html, up to 2 MB). They run live in the portfolio.</small></div>${table}</div>`;
-if(v==='sc')h+=`<div class="box pv"><div class="sr"><div><h3>Signed in as</h3><p>${esc(adminEmail)}</p></div></div>
-<div class="sr"><div><h3>Admin password</h3><p>Stored by Supabase Auth, never in this page.</p></div><button class="btn sm" data-a="pw">Change</button></div>
-<div class="sr"><div><h3>Two-factor authentication</h3><p>On and required. The database refuses changes unless you've entered an authenticator code. Lost your phone? In Supabase, open Authentication → Users → your user and remove the MFA factor, then sign in to set it up again.</p></div></div>
-<div class="sr"><div><h3>Sessions</h3><p>Closing this tab or 20 minutes of inactivity signs you out. Use this if you signed in on a device you no longer trust.</p></div><button class="btn sm dng" data-a="soall">Sign out everywhere</button></div>
-<div class="sr"><div><h3>Uploaded dashboards are isolated</h3><p>They run in a sandbox, so their code can't read your admin session or this page.</p></div></div></div>`;
+if(v==='sc')h+=`<div class="box pv"><div class="sr"><div><h3>Admin password</h3><p>Saved only as a salted hash, never as plain text.</p></div><button class="btn sm" data-a="pw">Change</button></div>
+<div class="sr"><div><h3>Two-factor authentication</h3><p>${S.sec.totp?'On. Sign-in needs a code from your authenticator app.':'Off. Turn on to require a code from Google or Microsoft Authenticator at sign-in.'}</p></div><button class="btn sm${S.sec.totp?' dng':''}" data-a="${S.sec.totp?'t2off':'t2on'}">${S.sec.totp?'Turn off':'Set up'}</button></div>
+<div class="sr"><div><h3>Sign-in protection</h3><p>After ${MAXTRY} wrong attempts, sign-in locks for 5 minutes. You're signed out after 20 minutes of inactivity.</p></div></div>
+<div class="sr"><div><h3>Uploaded dashboards are isolated</h3><p>They run in a sandbox, so their code can't read your admin data or settings.</p></div></div></div>
+<p class="pv" style="color:var(--mut);font-size:.85rem;max-width:44em">This site has no server, so admin sign-in protects the copy saved in this browser. Visitors only ever see the version you download and publish.</p>`;
 if(v==='ct')h+=`<div class="box pv"><div class="bh"><h3>Your contact details</h3></div><form id="cdf" class="pad" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end"><label>Phone / WhatsApp (with country code)<input id="cph" type="tel" maxlength="20" value="${esc(S.ct.ph)}" placeholder="+91 98765 43210"></label><label>Email ID<input id="cem" type="email" maxlength="120" value="${esc(S.ct.em)}" placeholder="you@example.com"></label><button class="btn p" style="justify-content:center">Save</button></form>
 <p class="pad" style="padding-top:0">Visitors see Call, WhatsApp and Email buttons. Their project briefs open in their own email app or WhatsApp, addressed to you. Leave a field blank to hide it.</p></div>`;
 $('#am').innerHTML=h;const dz=$('#dz');if(dz){['dragover','dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.toggle('hv',ev==='dragover');if(ev==='drop')upFile(e.dataTransfer.files[0])}));$('#fi').onchange=e=>{upFile(e.target.files[0]);e.target.value=''}}}
-async function upFile(f){if(!f||!authed)return;const ext=f.name.split('.').pop().toLowerCase();
+function upFile(f){if(!f||!authed)return;const ext=f.name.split('.').pop().toLowerCase();
 if(ext!=='html'&&ext!=='htm')return toast('Only interactive HTML dashboards (.html) can be uploaded.');
-if(f.size>MAXFILE)return toast('That file is over 2 MB. Please upload a smaller HTML dashboard.');
-const path=(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2))+'.html';toast('Uploading…');
-const up=await sb.storage.from(BUCKET).upload(path,f,{contentType:'text/html',upsert:false,cacheControl:'3600'});if(up.error)return toast(emsg(up.error));
-const {data,error}=await sb.from('dashboards').insert({name:f.name.replace(/\.[^.]+$/,'').slice(0,80)||'Dashboard',tool:'Interactive HTML',status:'pub',description:'Interactive operations dashboard.',metric:'Live',metric_label:'interactive demo',color:'#5a9b78',bg:'#dcebe2',file_path:path}).select('id').single();
-if(error){await sb.storage.from(BUCKET).remove([path]);return toast(emsg(error))}
-await refresh();go('db');toast('Uploaded and live. Use Edit to change its title and description.');openDemo(data.id)}
-$('#am').onclick=async e=>{const b=e.target.closest('[data-a]');if(!b||!authed)return;const a=b.dataset.a,id=+b.dataset.id,d=S.dash.find(x=>x.id===id);
+if(f.size>2e6)return toast('That file is over 2 MB. Please upload a smaller HTML dashboard.');
+const r=new FileReader();r.onerror=()=>toast('Could not read that file.');r.onload=()=>{const d={id:Date.now(),name:f.name.replace(/\.[^.]+$/,'').slice(0,80),tool:'Interactive HTML',st:'pub',up:fmtDate(Date.now()),col:'#5a9b78',bg:'#dcebe2',m:'Live',ml:'interactive demo',d:'Interactive operations dashboard.',html:String(r.result)};
+S.dash.unshift(d);if(!save()){S.dash.shift();return toast('Not enough browser storage. Delete an old dashboard and try again.')}
+go('db');renderWork();toast('Uploaded. Use Edit to change its title and description.');openDemo(d.id)};r.readAsText(f)}
+function exportSite(){const pub={dash:S.dash.filter(d=>d.st==='pub').map(({id,name,tool,st,up,col,bg,m,ml,d,k,html})=>({id,name,tool,st,up,col,bg,m,ml,d,k,html})),ct:S.ct};
+const json=JSON.stringify(pub).replace(/</g,'\\u003c').replace(/\//g,'\\/');
+const out=SRC.replace(/\/\*PUB\*\/[\s\S]*?\/\*END\*\//,()=>'/*PUB*/'+json+'/*END*/');
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:'text/html'}));a.download='index.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1e4);
+toast('Downloaded index.html. Upload it to your web host to publish.')}
+$('#am').onclick=e=>{const b=e.target.closest('[data-a]');if(!b||!authed)return;const a=b.dataset.a,id=+b.dataset.id,d=S.dash.find(x=>x.id===id);
 if(a==='up'){if(view!=='db')go('db');$('#fi').click()}
-if(a==='rf'){await refresh();toast('Refreshed')}
+if(a==='exp')exportSite();
 if(a==='view'&&d)openDemo(id);
-if(a==='ed'&&d)modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Edit dashboard card</h2><form id="edf" data-id="${+d.id}" style="display:grid;gap:12px"><label>Title<input id="e1" maxlength="80" required value="${esc(d.name)}"></label><label>Tool label<input id="e2" maxlength="30" required value="${esc(d.tool)}"></label><label>Short description<textarea id="e3" rows="3" maxlength="200">${esc(d.d)}</textarea></label><div class="r2"><label>Headline number<input id="e4" maxlength="12" value="${esc(d.m)}"></label><label>Number label<input id="e5" maxlength="40" value="${esc(d.ml)}"></label></div><button class="btn p" style="justify-content:center">Save changes</button></form><small class="err" id="le"></small>`,'s');
-if(a==='tg'&&d){const st=d.st==='pub'?'dr':'pub',x=await write(sb.from('dashboards').update({status:st}).eq('id',id));if(x)return toast(x);await refresh();toast(st==='pub'?'Published. Visitors can see it now.':'Moved to drafts')}
-if(a==='del'&&d&&confirm(`Delete "${d.name}"? This can't be undone.`)){const x=await write(sb.from('dashboards').delete().eq('id',id));if(x)return toast(x);if(d.file){await sb.storage.from(BUCKET).remove([d.file]);htmlCache.delete(d.file)}await refresh();toast('Deleted')}
-if(a==='pw')modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Change password</h2><form id="pf" style="display:grid;gap:12px">${pwFields()}<button class="btn p" style="justify-content:center">Save password</button></form><small class="err" id="le"></small>`,'s');
-if(a==='soall'&&confirm('Sign out on every device, including this one?'))signOut('Signed out on all devices','global')};
-
-renderWork();renderContact();
-if(!sb)console.warn('Supabase is not configured yet: set SUPABASE_URL near the top of the script.');
-refresh().then(hashAdmin);
+if(a==='ed'&&d)modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Edit dashboard card</h2><form id="edf" data-id="${+d.id}" style="display:grid;gap:12px"><label>Title<input id="e1" maxlength="80" required value="${esc(d.name)}"></label><label>Tool label<input id="e2" maxlength="30" required value="${esc(d.tool)}"></label><label>Short description<textarea id="e3" rows="3" maxlength="200">${esc(d.d)}</textarea></label><div class="r2"><label>Headline number<input id="e4" maxlength="12" value="${esc(d.m)}"></label><label>Number label<input id="e5" maxlength="40" value="${esc(d.ml)}"></label></div><button class="btn p" style="justify-content:center">Save changes</button></form>`,'s');
+if(a==='tg'&&d){d.st=d.st==='pub'?'dr':'pub';d.up=fmtDate(Date.now());save();go(view);renderWork();toast(d.st==='pub'?'Published':'Moved to drafts')}
+if(a==='del'&&d&&confirm(`Delete "${d.name}"? This can't be undone.`)){S.dash=S.dash.filter(x=>x.id!==id);save();go(view);renderWork();toast('Deleted')}
+if(a==='pw')modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Change password</h2><form id="pf" style="display:grid;gap:12px">${pwFields(1)}<button class="btn p" style="justify-content:center">Save password</button></form><small class="err" id="le"></small>`,'s');
+if(a==='t2on'){pend=b32enc(crypto.getRandomValues(new Uint8Array(20)));const uri=`otpauth://totp/Viroh%20Automation:admin?secret=${pend}&issuer=Viroh%20Automation`;
+modal(`<h2 style="font-size:1.5rem;margin-bottom:8px">Set up two-factor</h2><ol style="margin:0 0 14px;padding-left:20px;color:var(--mut);font-size:.9rem;display:grid;gap:6px"><li>In Google or Microsoft Authenticator, add an account and choose <b>Enter a setup key</b>.</li><li>Account name: <b>Viroh Automation admin</b>. Type: <b>Time based</b>. Key:</li></ol><div class="key">${pend.match(/.{4}/g).join(' ')}</div><p style="font-size:.82rem;color:var(--mut);margin:8px 0 14px">On your phone? <a href="${esc(uri)}" style="color:var(--gr);text-decoration:underline">Open in authenticator app</a></p><form id="tsf" style="display:grid;gap:12px"><label>3. Enter the 6-digit code it shows<input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><button class="btn p" style="justify-content:center">Turn on</button></form><small class="err" id="le"></small><p style="font-size:.78rem;color:var(--mut);margin:12px 0 0">If you lose the app, you'll need to clear this site's browser data to get back in, which also removes changes you haven't downloaded.</p>`,'s')}
+if(a==='t2off')modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Turn off two-factor</h2><form id="tdf" style="display:grid;gap:12px"><label>Current 6-digit code<input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><button class="btn p dng" style="justify-content:center">Turn off</button></form><small class="err" id="le"></small>`,'s')};
+renderWork();renderContact();hashAdmin();
 </script>
 </body>
 </html>
