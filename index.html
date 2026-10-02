@@ -154,45 +154,45 @@ code{font:.9em ui-monospace,Consolas,monospace;background:var(--bg);border:1px s
 <div class="ov" id="ov"><div class="md" id="md"></div></div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const PUB=/*PUB*/null/*END*/;
 const SRC='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const KEY='fm_portfolio_v1',IDLE=20*60e3,MAXTRY=5,LOCK=5*60e3;
+const KEY='fm_portfolio_v1',IDLE=20*60e3;
+const SB_URL='https://wadxxabvfetjpiiqdodk.supabase.co',SB_KEY='sb_publishable_GSuzvR-E-9xMZ3rBkbaWlg_qeH64TAZ';
+const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY):null;
 const seed={dash:[
 {id:1,name:'Fulfillment Control Tower',tool:'Power BI',st:'pub',up:'May 20, 2025',col:'#e9946a',bg:'#f6e5da',m:'28%',ml:'faster issue detection',d:'Live visibility into order flow, SLA risk, carrier performance, and fulfillment bottlenecks.',k:['Orders shipped',18492,'','On-time rate',96.8,'%','Avg cycle',8.4,'h','Open exceptions',127,'']},
 {id:2,name:'Inventory Health Monitor',tool:'Tableau',st:'pub',up:'May 18, 2025',col:'#6f98c9',bg:'#e0e8f3',m:'$184K',ml:'working capital identified',d:'A single view of aging stock, sell-through, cover days, and replenishment opportunities.',k:['Stock value',184,'K','Cover days',34,'d','Sell-through',72,'%','Aged 90d+',9,'%']},
 {id:3,name:'Warehouse Productivity',tool:'Advanced Excel',st:'dr',up:'May 12, 2025',col:'#5a9b78',bg:'#dcebe2',m:'16%',ml:'productivity improvement',d:'Shift-level labor planning and productivity tracking across pick, pack, and dispatch.',k:['Units / hour',112,'','Utilization',87,'%','Labor cost',41,'K','Pick accuracy',99.2,'%']}],
 ct:{ph:'',em:''}};
 const clone=o=>JSON.parse(JSON.stringify(o));
-let S=null;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!S||!Array.isArray(S.dash))S=clone(PUB||seed);
-S.sec=S.sec||{};S.ct=S.ct||{ph:'',em:''};
-if(S.ct.ph==='+91 00000 00000')S.ct.ph='';if(S.ct.em==='your.email@example.com')S.ct.em='';
-delete S.sec.appr;delete S.sec.tfa;delete S.msg;
-const isOwner=()=>!!(S.sec.hash||S.sec.pw);
-const save=()=>{if(!isOwner())return true;try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){return false}};
+/* data lives in Supabase; the built-in copy (PUB/seed) shows until it loads or if it can't be reached */
+let S=clone(PUB||seed);S.ct=S.ct||{ph:'',em:''};
+let LOCAL=null;try{LOCAL=JSON.parse(localStorage.getItem(KEY))}catch(e){} /* old browser-only copy, uploaded once on first owner sign-in */
+async function pull(){if(!sb)return false;
+const[a,b]=await Promise.all([sb.from('dashboards').select('data,pos').order('pos').order('id',{ascending:false}),sb.from('settings').select('ct').eq('id',1).maybeSingle()]);
+if(a.error||b.error){console.warn(a.error||b.error);return false}if(!b.data)return false;
+S.dash=a.data.map(r=>Object.assign({},r.data,{pos:r.pos}));S.ct=b.data.ct||{ph:'',em:''};return true}
+async function cloud(q){const{error}=await q;if(error){toast('Could not save: '+error.message);return false}return true}
+const putDash=d=>cloud(sb.from('dashboards').upsert({id:d.id,pos:d.pos||0,data:d,updated_at:new Date().toISOString()}));
+const putCt=()=>cloud(sb.from('settings').upsert({id:1,ct:S.ct,updated_at:new Date().toISOString()}));
+async function initCloud(){const src=LOCAL&&Array.isArray(LOCAL.dash)?LOCAL:S,ct=src.ct||{ph:'',em:''};
+if(ct.ph==='+91 00000 00000')ct.ph='';if(ct.em==='your.email@example.com')ct.em='';
+for(const[i,d]of src.dash.entries()){const x=Object.assign({},d,{pos:i});const{error}=await sb.from('dashboards').upsert({id:x.id,pos:i,data:x});if(error)throw error}
+const{error}=await sb.from('settings').upsert({id:1,ct});if(error)throw error}
 const fmtDate=t=>new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
 const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),3200)};
 const modal=(h,c)=>{clearTimeout(modal.t);const m=$('#md');m.className='md'+(c?' '+c:'');m.innerHTML=h;$('#ov').classList.add('on');const i=m.querySelector('input,textarea,button');if(i)setTimeout(()=>i.focus(),60)};
 const closeM=()=>{$('#ov').classList.remove('on');clearTimeout(modal.t);modal.t=setTimeout(()=>{$('#md').innerHTML=''},350)};
 $('#ov').onclick=e=>{if(e.target.id==='ov')closeM()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#ov').classList.contains('on'))closeM()});
 
-/* crypto: password hashing (PBKDF2) and authenticator codes (TOTP) */
-const te=new TextEncoder(),b64=u=>btoa(String.fromCharCode(...new Uint8Array(u))),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-const hasCrypto=()=>!!(window.crypto&&crypto.subtle);
-async function pwHash(pw,salt){const k=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveBits']);return b64(await crypto.subtle.deriveBits({name:'PBKDF2',salt:unb64(salt),iterations:210000,hash:'SHA-256'},k,256))}
-async function setPw(pw){const salt=b64(crypto.getRandomValues(new Uint8Array(16)));S.sec.hash=await pwHash(pw,salt);S.sec.salt=salt;delete S.sec.pw;return save()}
-async function checkPw(pw){return S.sec.hash?await pwHash(pw,S.sec.salt)===S.sec.hash:pw===S.sec.pw}
-const B32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-const b32enc=u=>{let b='',o='';u.forEach(x=>b+=x.toString(2).padStart(8,'0'));for(let i=0;i+5<=b.length;i+=5)o+=B32[parseInt(b.slice(i,i+5),2)];return o};
-const b32dec=s=>{let b='';for(const c of s)b+=B32.indexOf(c).toString(2).padStart(5,'0');return Uint8Array.from(b.match(/.{8}/g)||[],x=>parseInt(x,2))};
-async function totp(sec,c){const k=await crypto.subtle.importKey('raw',b32dec(sec),{name:'HMAC',hash:'SHA-1'},false,['sign']);const m=new DataView(new ArrayBuffer(8));m.setUint32(0,Math.floor(c/4294967296));m.setUint32(4,c>>>0);
-const h=new Uint8Array(await crypto.subtle.sign('HMAC',k,m.buffer)),o=h[19]&15;return String((((h[o]&127)<<24)|(h[o+1]<<16)|(h[o+2]<<8)|h[o+3])%1e6).padStart(6,'0')}
-async function checkCode(sec,code){code=String(code).replace(/\s/g,'');if(!/^\d{6}$/.test(code))return false;const c=Math.floor(Date.now()/3e4);for(const d of[-1,0,1])if(await totp(sec,c+d)===code)return true;return false}
-const lockedMin=()=>{const l=S.sec.lock||0;return l>Date.now()?Math.ceil((l-Date.now())/60e3):0};
-function failTry(){S.sec.fails=(S.sec.fails||0)+1;if(S.sec.fails>=MAXTRY){S.sec.lock=Date.now()+LOCK;S.sec.fails=0}save();return lockedMin()?`Too many attempts. Sign-in is locked for ${lockedMin()} minutes.`:`${MAXTRY-S.sec.fails} attempt(s) left.`}
+/* auth: Supabase email + password, optional authenticator-app 2FA (Supabase MFA) */
+const code6=s=>String(s).replace(/\s/g,'');
+async function verifiedTotp(){const{data}=await sb.auth.mfa.listFactors();return data&&data.totp&&data.totp[0]}
+async function verifyTotp(factorId,code){code=code6(code);if(!/^\d{6}$/.test(code))return'Enter the 6-digit code.';const{error}=await sb.auth.mfa.challengeAndVerify({factorId,code});return error?'Wrong or expired code.':''}
 
 /* hero counters + donut */
 $$('[data-n]').forEach(el=>{const n=+el.dataset.n,d=+el.dataset.d||0,s=el.dataset.s||'',t0=performance.now();
@@ -232,85 +232,91 @@ if(via==='wa'){if(!window.open(`https://wa.me/${dg}?text=${encodeURIComponent(su
 else{location.href=`mailto:${em}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;toast('Opening your email app with your brief. Press send there.')}};
 
 /* admin auth */
-let view='ov',authed=false,last=Date.now(),pend='';
+let view='ov',authed=false,last=Date.now(),pend='',mfaOn=false;
 const err=t=>{const x=$('#le');if(x)x.textContent=t};
-const pwFields=(cur)=>`${cur?'<label>Current password<input type="password" id="n0" required autocomplete="current-password"></label>':''}<label>New password<input type="password" id="n1" minlength="8" maxlength="128" required autocomplete="new-password"></label><label>Confirm new password<input type="password" id="n2" minlength="8" maxlength="128" required autocomplete="new-password"></label>`;
+const pwFields=()=>`<label>New password<input type="password" id="n1" minlength="8" maxlength="128" required autocomplete="new-password"></label><label>Confirm new password<input type="password" id="n2" minlength="8" maxlength="128" required autocomplete="new-password"></label>`;
 const newPwErr=()=>{const a=$('#n1').value,b=$('#n2').value;return a.length<8?'Use at least 8 characters.':a!==b?'Passwords do not match.':a==='admin123'?'Choose a password other than the old demo password.':''};
-function openLogin(){if(authed)return openAdmin();if(!hasCrypto())return toast('Admin sign-in needs a secure (https) connection.');
-if(!isOwner())return modal(`<h2 style="font-size:1.6rem;margin-bottom:6px">Create admin password</h2><p style="color:var(--mut);margin:0 0 16px;font-size:.9rem">First sign-in on this browser. It's saved here only as a secure hash.</p><form id="cpf" style="display:grid;gap:12px">${pwFields()}<button class="btn p" style="justify-content:center">Create and continue</button></form><small class="err" id="le"></small>`,'s');
-modal(`<h2 style="font-size:1.6rem;margin-bottom:16px">Admin sign in</h2><form id="lf" style="display:grid;gap:12px"><label>Password<input type="password" id="pw" required autocomplete="current-password"></label><button class="btn p" style="justify-content:center">Continue</button></form><small class="err" id="le">${lockedMin()?`Too many attempts. Try again in ${lockedMin()} minutes.`:''}</small>`,'s')}
-function next2fa(){if(!S.sec.totp)return enter();modal(`<h2 style="font-size:1.6rem;margin-bottom:6px">Two-factor check</h2><p style="color:var(--mut);margin:0 0 16px;font-size:.9rem">Enter the 6-digit code from your authenticator app.</p><form id="tf" style="display:grid;gap:12px"><input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"><button class="btn p" style="justify-content:center">Verify</button></form><small class="err" id="le"></small>`,'s')}
-function enter(){authed=true;last=Date.now();closeM();openAdmin()}
+const emField='<label>Email<input type="email" id="em" required maxlength="120" autocomplete="username"></label>';
+function loginForm(msg){modal(`<h2 style="font-size:1.6rem;margin-bottom:16px">Admin sign in</h2><form id="lf" style="display:grid;gap:12px">${emField}<label>Password<input type="password" id="pw" required autocomplete="current-password"></label><button class="btn p" style="justify-content:center">Continue</button></form><small class="err" id="le">${esc(msg||'')}</small><p style="font-size:.82rem;color:var(--mut);margin:12px 0 0">First time? <a href="#" onclick="signupForm();return false" style="color:var(--gr);text-decoration:underline">Create the admin account</a></p>`,'s')}
+function signupForm(){modal(`<h2 style="font-size:1.6rem;margin-bottom:6px">Create admin account</h2><p style="color:var(--mut);margin:0 0 16px;font-size:.9rem">The first account created becomes the portfolio owner. Use the same email and password on every device.</p><form id="cpf" style="display:grid;gap:12px">${emField}${pwFields()}<button class="btn p" style="justify-content:center">Create account</button></form><small class="err" id="le"></small>`,'s')}
+async function openLogin(){if(authed)return openAdmin();if(!sb)return toast('Could not reach the server. Check your connection and reload.');
+const{data}=await sb.auth.getSession();if(data.session)return next2fa();loginForm()}
+async function next2fa(){const{data}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();if(!data||data.nextLevel!=='aal2'||data.currentLevel==='aal2')return enter();
+modal(`<h2 style="font-size:1.6rem;margin-bottom:6px">Two-factor check</h2><p style="color:var(--mut);margin:0 0 16px;font-size:.9rem">Enter the 6-digit code from your authenticator app.</p><form id="tf" style="display:grid;gap:12px"><input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"><button class="btn p" style="justify-content:center">Verify</button></form><small class="err" id="le"></small>`,'s')}
+async function enter(){const o=await sb.from('owners').select('user_id').maybeSingle();
+if(o.error||!o.data){await sb.auth.signOut();return loginForm(o.error?'Could not check your account: '+o.error.message:'This account is not the portfolio owner.')}
+if(!await pull()){try{await initCloud()}catch(x){return loginForm('Could not set up your data: '+x.message)}await pull()}
+mfaOn=!!await verifiedTotp();authed=true;last=Date.now();closeM();openAdmin();renderWork();renderContact()}
 function openAdmin(){$('#admin').classList.add('on');document.body.style.overflow='hidden';go(view)}
 function closeAdmin(){$('#admin').classList.remove('on');document.body.style.overflow='';renderWork();renderContact();if(location.hash==='#admin')try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
-function signOut(t){authed=false;closeM();closeAdmin();toast(t)}
+function signOut(t){authed=false;if(sb)sb.auth.signOut();closeM();closeAdmin();toast(t)}
 $('#vp').onclick=closeAdmin;$('#lo').onclick=()=>signOut('Signed out');
 ['pointerdown','keydown','mousemove','wheel'].forEach(ev=>addEventListener(ev,()=>{last=Date.now()},{passive:true}));
 setInterval(()=>{if(authed&&Date.now()-last>IDLE)signOut('Signed out after 20 minutes of inactivity.')},30e3);
 const hashAdmin=()=>{if(location.hash==='#admin')openLogin()};addEventListener('hashchange',hashAdmin);$('#adm').onclick=e=>{e.preventDefault();openLogin()};
 
-document.addEventListener('submit',async e=>{const id=e.target.id;if(!['cpf','lf','fpf','tf','pf','tsf','tdf','cdf','edf'].includes(id))return;e.preventDefault();
+document.addEventListener('submit',async e=>{const id=e.target.id;if(!['cpf','lf','tf','pf','tsf','tdf','cdf','edf'].includes(id))return;e.preventDefault();
 const btn=e.target.querySelector('button');if(btn)btn.disabled=true;
 try{
-if(id==='cpf'||id==='fpf'){const x=newPwErr();if(x)return err(x);if(!await setPw($('#n1').value))return err('Could not save. Browser storage may be full or blocked.');if(id==='cpf')return enter();return next2fa()}
-if(id==='lf'){if(lockedMin())return err(`Too many attempts. Try again in ${lockedMin()} minutes.`);const v=$('#pw').value;
-if(!await checkPw(v))return err('Incorrect password. '+failTry());S.sec.fails=0;save();
-if(!S.sec.hash){if(v==='admin123')return modal(`<h2 style="font-size:1.5rem;margin-bottom:6px">Set a new password</h2><p style="color:var(--mut);margin:0 0 16px;font-size:.9rem">The demo password is public. Choose your own to continue.</p><form id="fpf" style="display:grid;gap:12px">${pwFields()}<button class="btn p" style="justify-content:center">Save and continue</button></form><small class="err" id="le"></small>`,'s');await setPw(v)}
-return next2fa()}
-if(id==='tf'){if(lockedMin())return err(`Too many attempts. Try again in ${lockedMin()} minutes.`);if(!await checkCode(S.sec.totp,$('#cd').value))return err('Wrong or expired code. '+failTry());S.sec.fails=0;save();return enter()}
+if(id==='cpf'){const x=newPwErr();if(x)return err(x);const{data,error}=await sb.auth.signUp({email:$('#em').value.trim(),password:$('#n1').value});if(error)return err(error.message);
+if(!data.session)return loginForm('Account created. Open the confirmation email we sent you, then sign in here.');return enter()}
+if(id==='lf'){const{error}=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});if(error)return err(error.message==='Invalid login credentials'?'Incorrect email or password.':error.message);return next2fa()}
+if(id==='tf'){const f=await verifiedTotp();if(!f)return enter();const x=await verifyTotp(f.id,$('#cd').value);if(x)return err(x);return enter()}
 if(!authed)return;
-if(id==='pf'){if(!await checkPw($('#n0').value))return err('Current password is incorrect.');const x=newPwErr();if(x)return err(x);await setPw($('#n1').value);closeM();toast('Password updated')}
-if(id==='tsf'){if(!await checkCode(pend,$('#cd').value))return err('That code didn’t match. Check the key and your phone’s clock, then try again.');S.sec.totp=pend;pend='';save();closeM();go('sc');toast('Two-factor authentication is on')}
-if(id==='tdf'){if(!await checkCode(S.sec.totp,$('#cd').value))return err('Wrong or expired code.');delete S.sec.totp;save();closeM();go('sc');toast('Two-factor authentication is off')}
+if(id==='pf'){const x=newPwErr();if(x)return err(x);const{error}=await sb.auth.updateUser({password:$('#n1').value});if(error)return err(error.message);closeM();toast('Password updated')}
+if(id==='tsf'){const x=await verifyTotp(pend,$('#cd').value);if(x)return err('That code didn’t match. Check the key and your phone’s clock, then try again.');pend='';mfaOn=true;closeM();go('sc');toast('Two-factor authentication is on')}
+if(id==='tdf'){const f=await verifiedTotp();if(f){const x=await verifyTotp(f.id,$('#cd').value);if(x)return err(x);const{error}=await sb.auth.mfa.unenroll({factorId:f.id});if(error)return err(error.message)}mfaOn=false;closeM();go('sc');toast('Two-factor authentication is off')}
 if(id==='cdf'){const ph=$('#cph').value.trim(),em=$('#cem').value.trim();
 if(ph&&(!/^\+?[\d\s()-]{8,20}$/.test(ph)||digits(ph).length<8))return toast('Enter the phone number with country code, e.g. +91 98765 43210.');
-if(em&&!validEm(em))return toast('Enter a valid email ID.');S.ct={ph,em};save();renderContact();go('ct');toast('Saved. Download the site to publish it.')}
-if(id==='edf'){const d=S.dash.find(x=>x.id===+e.target.dataset.id);if(!d)return closeM();d.name=$('#e1').value.trim()||d.name;d.tool=$('#e2').value.trim()||d.tool;d.d=$('#e3').value.trim();d.m=$('#e4').value.trim();d.ml=$('#e5').value.trim();d.up=fmtDate(Date.now());save();closeM();go(view);toast('Dashboard updated')}
+if(em&&!validEm(em))return toast('Enter a valid email ID.');const old=S.ct;S.ct={ph,em};if(!await putCt()){S.ct=old;return}renderContact();go('ct');toast('Saved. Live on every device.')}
+if(id==='edf'){const d=S.dash.find(x=>x.id===+e.target.dataset.id);if(!d)return closeM();const old=clone(d);d.name=$('#e1').value.trim()||d.name;d.tool=$('#e2').value.trim()||d.tool;d.d=$('#e3').value.trim();d.m=$('#e4').value.trim();d.ml=$('#e5').value.trim();d.up=fmtDate(Date.now());if(!await putDash(d))return Object.assign(d,old);closeM();go(view);renderWork();toast('Dashboard updated')}
 }finally{if(btn&&btn.isConnected)btn.disabled=false}});
 
 /* admin views */
 $$('.as .n[data-v]').forEach(b=>b.onclick=()=>go(b.dataset.v));
 const T={ov:['Overview','Your portfolio at a glance.'],db:['Dashboards','Upload, publish, and manage your portfolio work.'],sc:['Security','Control access and protect your workspace.'],ct:['Contact','How visitors reach you.']};
 function go(v){if(!authed)return;view=v;$$('.as .n[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-const pub=S.dash.filter(d=>d.st==='pub').length,dr=S.dash.length-pub,ctOk=!!(validEm(S.ct.em||'')||digits(S.ct.ph)),secOk=!!(S.sec.hash&&S.sec.totp);
+const pub=S.dash.filter(d=>d.st==='pub').length,dr=S.dash.length-pub,ctOk=!!(validEm(S.ct.em||'')||digits(S.ct.ph)),secOk=mfaOn;
 const rows=S.dash.length?S.dash.map(d=>`<tr><td><b>${esc(d.name)}</b><br><small style="color:var(--mut)">${esc(d.tool)}</small></td><td><span class="st ${d.st==='pub'?'pub':'dr'}">${d.st==='pub'?'Published':'Draft'}</span></td><td>${esc(d.up)}</td><td style="white-space:nowrap"><button class="btn sm" data-a="view" data-id="${+d.id}">Preview</button> <button class="btn sm" data-a="ed" data-id="${+d.id}">Edit</button> <button class="btn sm" data-a="tg" data-id="${+d.id}">${d.st==='pub'?'Unpublish':'Publish'}</button> <button class="btn sm dng" data-a="del" data-id="${+d.id}">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--mut)">No dashboards yet. Upload an HTML dashboard to get started.</td></tr>';
 const table=`<div class="tw"><table><tr><th>DASHBOARD</th><th>STATUS</th><th>UPDATED</th><th></th></tr>${rows}</table></div>`;
 let h=`<div class="top pv"><div><div class="tag">ADMIN WORKSPACE</div><h2>${T[v][0]}</h2><p style="color:var(--mut);margin:6px 0 0">${T[v][1]}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="exp">⬇ Download site</button><button class="btn p" data-a="up">＋ Upload HTML dashboard</button></div></div>`;
 if(v==='ov')h+=`<div class="kg pv"><div class="kc"><small>Published dashboards</small><b>${pub}</b></div><div class="kc"><small>Drafts</small><b>${dr}</b></div><div class="kc"><small>Contact details</small><b style="font-size:1.5rem;color:${ctOk?'var(--gr)':'#b4492a'}">${ctOk?'Set':'Missing'}</b></div><div class="kc"><small>Security</small><b style="font-size:1.5rem;color:${secOk?'var(--gr)':'#b4492a'}">${secOk?'Protected':'Add 2FA'}</b></div></div>
-<div class="box pv"><div class="bh"><h3>Publishing your changes</h3></div><p class="pad">Changes you make here are saved in this browser only. When you're ready, click <b>Download site</b> and upload the downloaded <code>index.html</code> to your web host. Visitors then see your published dashboards and contact details.</p></div>
+<div class="box pv"><div class="bh"><h3>Publishing your changes</h3></div><p class="pad">Changes you make here save to your cloud database right away. Visitors and your other devices see them the next time the page loads. <b>Download site</b> is optional: it saves an offline backup <code>index.html</code> with your published work built in.</p></div>
 <div class="box pv"><div class="bh"><h3>Recent dashboards</h3><button class="btn sm" onclick="go('db')">View all</button></div>${table}</div>`;
 if(v==='db')h+=`<div class="box pv"><div class="bh"><h3>All dashboards</h3></div><div class="drop" id="dz">Drag a file here, or <label style="display:inline;color:var(--gr);cursor:pointer;text-decoration:underline">browse<input type="file" id="fi" hidden accept=".html,.htm,text/html"></label><br><small>Interactive HTML dashboards only (.html, up to 2 MB). They run live in the portfolio.</small></div>${table}</div>`;
-if(v==='sc')h+=`<div class="box pv"><div class="sr"><div><h3>Admin password</h3><p>Saved only as a salted hash, never as plain text.</p></div><button class="btn sm" data-a="pw">Change</button></div>
-<div class="sr"><div><h3>Two-factor authentication</h3><p>${S.sec.totp?'On. Sign-in needs a code from your authenticator app.':'Off. Turn on to require a code from Google or Microsoft Authenticator at sign-in.'}</p></div><button class="btn sm${S.sec.totp?' dng':''}" data-a="${S.sec.totp?'t2off':'t2on'}">${S.sec.totp?'Turn off':'Set up'}</button></div>
-<div class="sr"><div><h3>Sign-in protection</h3><p>After ${MAXTRY} wrong attempts, sign-in locks for 5 minutes. You're signed out after 20 minutes of inactivity.</p></div></div>
+if(v==='sc')h+=`<div class="box pv"><div class="sr"><div><h3>Admin password</h3><p>Your account is managed by Supabase Auth. The same email and password work on every device.</p></div><button class="btn sm" data-a="pw">Change</button></div>
+<div class="sr"><div><h3>Two-factor authentication</h3><p>${mfaOn?'On. Sign-in needs a code from your authenticator app, and the database rejects edits without it.':'Off. Turn on to require a code from Google or Microsoft Authenticator at sign-in.'}</p></div><button class="btn sm${mfaOn?' dng':''}" data-a="${mfaOn?'t2off':'t2on'}">${mfaOn?'Turn off':'Set up'}</button></div>
+<div class="sr"><div><h3>Sign-in protection</h3><p>Repeated failed sign-ins are rate-limited by the server. You're signed out after 20 minutes of inactivity.</p></div></div>
 <div class="sr"><div><h3>Uploaded dashboards are isolated</h3><p>They run in a sandbox, so their code can't read your admin data or settings.</p></div></div></div>
-<p class="pv" style="color:var(--mut);font-size:.85rem;max-width:44em">This site has no server, so admin sign-in protects the copy saved in this browser. Visitors only ever see the version you download and publish.</p>`;
+<p class="pv" style="color:var(--mut);font-size:.85rem;max-width:44em">Only the owner account can change data. Visitors can read published dashboards and contact details, never drafts.</p>`;
 if(v==='ct')h+=`<div class="box pv"><div class="bh"><h3>Your contact details</h3></div><form id="cdf" class="pad" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end"><label>Phone / WhatsApp (with country code)<input id="cph" type="tel" maxlength="20" value="${esc(S.ct.ph)}" placeholder="+91 98765 43210"></label><label>Email ID<input id="cem" type="email" maxlength="120" value="${esc(S.ct.em)}" placeholder="you@example.com"></label><button class="btn p" style="justify-content:center">Save</button></form>
 <p class="pad" style="padding-top:0">Visitors see Call, WhatsApp and Email buttons. Their project briefs open in their own email app or WhatsApp, addressed to you. Leave a field blank to hide it.</p></div>`;
 $('#am').innerHTML=h;const dz=$('#dz');if(dz){['dragover','dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.toggle('hv',ev==='dragover');if(ev==='drop')upFile(e.dataTransfer.files[0])}));$('#fi').onchange=e=>{upFile(e.target.files[0]);e.target.value=''}}}
 function upFile(f){if(!f||!authed)return;const ext=f.name.split('.').pop().toLowerCase();
 if(ext!=='html'&&ext!=='htm')return toast('Only interactive HTML dashboards (.html) can be uploaded.');
 if(f.size>2e6)return toast('That file is over 2 MB. Please upload a smaller HTML dashboard.');
-const r=new FileReader();r.onerror=()=>toast('Could not read that file.');r.onload=()=>{const d={id:Date.now(),name:f.name.replace(/\.[^.]+$/,'').slice(0,80),tool:'Interactive HTML',st:'pub',up:fmtDate(Date.now()),col:'#5a9b78',bg:'#dcebe2',m:'Live',ml:'interactive demo',d:'Interactive operations dashboard.',html:String(r.result)};
-S.dash.unshift(d);if(!save()){S.dash.shift();return toast('Not enough browser storage. Delete an old dashboard and try again.')}
+const r=new FileReader();r.onerror=()=>toast('Could not read that file.');r.onload=async()=>{const t=Date.now(),d={id:t,pos:-t,name:f.name.replace(/\.[^.]+$/,'').slice(0,80),tool:'Interactive HTML',st:'pub',up:fmtDate(Date.now()),col:'#5a9b78',bg:'#dcebe2',m:'Live',ml:'interactive demo',d:'Interactive operations dashboard.',html:String(r.result)};
+toast('Uploading…');if(!await putDash(d))return;S.dash.unshift(d);
 go('db');renderWork();toast('Uploaded. Use Edit to change its title and description.');openDemo(d.id)};r.readAsText(f)}
 function exportSite(){const pub={dash:S.dash.filter(d=>d.st==='pub').map(({id,name,tool,st,up,col,bg,m,ml,d,k,html})=>({id,name,tool,st,up,col,bg,m,ml,d,k,html})),ct:S.ct};
 const json=JSON.stringify(pub).replace(/</g,'\\u003c').replace(/\//g,'\\/');
 const out=SRC.replace(/\/\*PUB\*\/[\s\S]*?\/\*END\*\//,()=>'/*PUB*/'+json+'/*END*/');
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:'text/html'}));a.download='index.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1e4);
-toast('Downloaded index.html. Upload it to your web host to publish.')}
-$('#am').onclick=e=>{const b=e.target.closest('[data-a]');if(!b||!authed)return;const a=b.dataset.a,id=+b.dataset.id,d=S.dash.find(x=>x.id===id);
+toast('Downloaded a backup index.html.')}
+$('#am').onclick=async e=>{const b=e.target.closest('[data-a]');if(!b||!authed)return;const a=b.dataset.a,id=+b.dataset.id,d=S.dash.find(x=>x.id===id);
 if(a==='up'){if(view!=='db')go('db');$('#fi').click()}
 if(a==='exp')exportSite();
 if(a==='view'&&d)openDemo(id);
 if(a==='ed'&&d)modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Edit dashboard card</h2><form id="edf" data-id="${+d.id}" style="display:grid;gap:12px"><label>Title<input id="e1" maxlength="80" required value="${esc(d.name)}"></label><label>Tool label<input id="e2" maxlength="30" required value="${esc(d.tool)}"></label><label>Short description<textarea id="e3" rows="3" maxlength="200">${esc(d.d)}</textarea></label><div class="r2"><label>Headline number<input id="e4" maxlength="12" value="${esc(d.m)}"></label><label>Number label<input id="e5" maxlength="40" value="${esc(d.ml)}"></label></div><button class="btn p" style="justify-content:center">Save changes</button></form>`,'s');
-if(a==='tg'&&d){d.st=d.st==='pub'?'dr':'pub';d.up=fmtDate(Date.now());save();go(view);renderWork();toast(d.st==='pub'?'Published':'Moved to drafts')}
-if(a==='del'&&d&&confirm(`Delete "${d.name}"? This can't be undone.`)){S.dash=S.dash.filter(x=>x.id!==id);save();go(view);renderWork();toast('Deleted')}
-if(a==='pw')modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Change password</h2><form id="pf" style="display:grid;gap:12px">${pwFields(1)}<button class="btn p" style="justify-content:center">Save password</button></form><small class="err" id="le"></small>`,'s');
-if(a==='t2on'){pend=b32enc(crypto.getRandomValues(new Uint8Array(20)));const uri=`otpauth://totp/Viroh%20Automation:admin?secret=${pend}&issuer=Viroh%20Automation`;
-modal(`<h2 style="font-size:1.5rem;margin-bottom:8px">Set up two-factor</h2><ol style="margin:0 0 14px;padding-left:20px;color:var(--mut);font-size:.9rem;display:grid;gap:6px"><li>In Google or Microsoft Authenticator, add an account and choose <b>Enter a setup key</b>.</li><li>Account name: <b>Viroh Automation admin</b>. Type: <b>Time based</b>. Key:</li></ol><div class="key">${pend.match(/.{4}/g).join(' ')}</div><p style="font-size:.82rem;color:var(--mut);margin:8px 0 14px">On your phone? <a href="${esc(uri)}" style="color:var(--gr);text-decoration:underline">Open in authenticator app</a></p><form id="tsf" style="display:grid;gap:12px"><label>3. Enter the 6-digit code it shows<input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><button class="btn p" style="justify-content:center">Turn on</button></form><small class="err" id="le"></small><p style="font-size:.78rem;color:var(--mut);margin:12px 0 0">If you lose the app, you'll need to clear this site's browser data to get back in, which also removes changes you haven't downloaded.</p>`,'s')}
+if(a==='tg'&&d){const old=[d.st,d.up];d.st=d.st==='pub'?'dr':'pub';d.up=fmtDate(Date.now());if(!await putDash(d)){[d.st,d.up]=old;return}go(view);renderWork();toast(d.st==='pub'?'Published':'Moved to drafts')}
+if(a==='del'&&d&&confirm(`Delete "${d.name}"? This can't be undone.`)){if(!await cloud(sb.from('dashboards').delete().eq('id',id)))return;S.dash=S.dash.filter(x=>x.id!==id);go(view);renderWork();toast('Deleted')}
+if(a==='pw')modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Change password</h2><form id="pf" style="display:grid;gap:12px">${pwFields()}<button class="btn p" style="justify-content:center">Save password</button></form><small class="err" id="le"></small>`,'s');
+if(a==='t2on'){const l=await sb.auth.mfa.listFactors();for(const f of(l.data&&l.data.all)||[])if(f.status!=='verified')await sb.auth.mfa.unenroll({factorId:f.id});
+const{data:en,error}=await sb.auth.mfa.enroll({factorType:'totp',issuer:'Viroh Automation'});if(error)return toast('Could not start 2FA setup: '+error.message);pend=en.id;const sec=en.totp.secret,uri=en.totp.uri;
+modal(`<h2 style="font-size:1.5rem;margin-bottom:8px">Set up two-factor</h2><ol style="margin:0 0 14px;padding-left:20px;color:var(--mut);font-size:.9rem;display:grid;gap:6px"><li>In Google or Microsoft Authenticator, scan this QR code, or add an account and choose <b>Enter a setup key</b>.</li><li>Account name: <b>Viroh Automation admin</b>. Type: <b>Time based</b>. Key:</li></ol><img src="${esc(en.totp.qr_code)}" alt="2FA QR code" width="160" height="160" style="display:block;margin:0 auto 10px;background:#fff;border-radius:8px"><div class="key">${esc((sec.match(/.{1,4}/g)||[]).join(' '))}</div><p style="font-size:.82rem;color:var(--mut);margin:8px 0 14px">On your phone? <a href="${esc(uri)}" style="color:var(--gr);text-decoration:underline">Open in authenticator app</a></p><form id="tsf" style="display:grid;gap:12px"><label>3. Enter the 6-digit code it shows<input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><button class="btn p" style="justify-content:center">Turn on</button></form><small class="err" id="le"></small><p style="font-size:.78rem;color:var(--mut);margin:12px 0 0">If you lose the app, you can remove the factor from the Supabase dashboard (Authentication → Users).</p>`,'s')}
 if(a==='t2off')modal(`<h2 style="font-size:1.5rem;margin-bottom:12px">Turn off two-factor</h2><form id="tdf" style="display:grid;gap:12px"><label>Current 6-digit code<input id="cd" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><button class="btn p dng" style="justify-content:center">Turn off</button></form><small class="err" id="le"></small>`,'s')};
 renderWork();renderContact();hashAdmin();
+pull().then(ok=>{if(ok){renderWork();renderContact()}});
 </script>
 </body>
 </html>
