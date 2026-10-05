@@ -53,6 +53,7 @@ section{padding:96px 0}.sh{display:flex;justify-content:space-between;align-item
 .wk{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s;text-align:left;padding:0;color:inherit}
 .wk:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(20,60,45,.14)}
 .wk .th{height:190px;padding:22px 22px 0;display:flex;align-items:flex-end;gap:7px}.wk .th div{flex:1;border-radius:5px 5px 0 0;height:var(--h);transform-origin:bottom;transition:transform .5s}.wk:hover .th div{transform:scaleY(1.12)}
+.wk .th.live{padding:0;display:block;position:relative;overflow:hidden;background:#fff}.wk .th.live iframe{position:absolute;top:0;left:0;width:1280px;height:900px;border:0;border-radius:0;transform-origin:0 0;pointer-events:none}
 .wk .bd{padding:20px 22px 22px}.pill{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:6px}
 .wk p{color:var(--mut);font-size:.9rem;margin:8px 0 18px}.wk .ft{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:14px}.ft b{font-size:1.4rem}.ft small{color:var(--mut);margin-left:6px}
 .sv{background:var(--mint)}.sv .c{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;transition:transform .3s}.sv .c:hover{transform:translateY(-4px)}
@@ -165,7 +166,7 @@ const SB_URL='https://wadxxabvfetjpiiqdodk.supabase.co',SB_KEY='sb_publishable_G
 const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY):null;
 const seed={dash:[
 {id:1,name:'Fulfillment Control Tower',tool:'Power BI',st:'pub',up:'May 20, 2025',col:'#e9946a',bg:'#f6e5da',m:'28%',ml:'faster issue detection',d:'Live visibility into order flow, SLA risk, carrier performance, and fulfillment bottlenecks.',k:['Orders shipped',18492,'','On-time rate',96.8,'%','Avg cycle',8.4,'h','Open exceptions',127,'']},
-{id:2,name:'Inventory Health Monitor',tool:'Tableau',st:'pub',up:'May 18, 2025',col:'#6f98c9',bg:'#e0e8f3',m:'$184K',ml:'working capital identified',d:'A single view of aging stock, sell-through, cover days, and replenishment opportunities.',k:['Stock value',184,'K','Cover days',34,'d','Sell-through',72,'%','Aged 90d+',9,'%']},
+{id:2,name:'Inventory Health Monitor',tool:'Tableau',st:'pub',up:'May 18, 2025',col:'#6f98c9',bg:'#e0e8f3',m:'₹184K',ml:'working capital identified',d:'A single view of aging stock, sell-through, cover days, and replenishment opportunities.',k:['Stock value',184,'K','Cover days',34,'d','Sell-through',72,'%','Aged 90d+',9,'%']},
 {id:3,name:'Warehouse Productivity',tool:'Advanced Excel',st:'dr',up:'May 12, 2025',col:'#5a9b78',bg:'#dcebe2',m:'16%',ml:'productivity improvement',d:'Shift-level labor planning and productivity tracking across pick, pack, and dispatch.',k:['Units / hour',112,'','Utilization',87,'%','Labor cost',41,'K','Pick accuracy',99.2,'%']}],
 ct:{ph:'',em:''}};
 const clone=o=>JSON.parse(JSON.stringify(o));
@@ -201,12 +202,18 @@ setTimeout(()=>{$('#s1').setAttribute('stroke-dasharray','146 226');$('#s2').set
 
 /* public work grid */
 function renderWork(){const p=S.dash.filter(d=>d.st==='pub');$('#workGrid').innerHTML=p.length?p.map(d=>{const hs=[40,55,45,70,60,85,75].map(h=>h+((d.id*13)%15));
-return `<button class="wk" data-id="${+d.id}"><div class="th" style="background:${esc(d.bg)}">${hs.map(h=>`<div style="--h:${h}%;background:${esc(d.col)}"></div>`).join('')}</div><div class="bd"><span class="pill" style="background:${esc(d.bg)};color:${esc(d.col)}">${esc(d.tool).toUpperCase()}</span><h3 style="margin-top:12px">${esc(d.name)}</h3><p>${esc(d.d||'Interactive operations dashboard.')}</p><div class="ft"><span><b>${esc(d.m||'Live')}</b><small>${esc(d.ml||'demo')}</small></span><span class="ic" style="margin:0;width:34px;height:34px">→</span></div></div></button>`}).join(''):'<p style="color:var(--mut)">New dashboards are coming soon.</p>';
-$$('.wk').forEach(b=>b.onclick=()=>openDemo(+b.dataset.id))}
+const th=d.html?`<div class="th live"><iframe sandbox="allow-scripts" tabindex="-1" aria-hidden="true" loading="lazy" scrolling="no" srcdoc="${esc(withShim(d.html,THUMB))}" title="${esc(d.name)} preview"></iframe></div>`:`<div class="th" style="background:${esc(d.bg)}">${hs.map(h=>`<div style="--h:${h}%;background:${esc(d.col)}"></div>`).join('')}</div>`;
+return `<button class="wk" data-id="${+d.id}">${th}<div class="bd"><span class="pill" style="background:${esc(d.bg)};color:${esc(d.col)}">${esc(d.tool).toUpperCase()}</span><h3 style="margin-top:12px">${esc(d.name)}</h3><p>${esc(d.d||'Interactive operations dashboard.')}</p><div class="ft"><span><b>${esc(d.m||'Live')}</b><small>${esc(d.ml||'demo')}</small></span><span class="ic" style="margin:0;width:34px;height:34px">→</span></div></div></button>`}).join(''):'<p style="color:var(--mut)">New dashboards are coming soon.</p>';
+$$('.wk').forEach(b=>b.onclick=()=>openDemo(+b.dataset.id));fitThumbs()}
+/* shrink each live preview (rendered at 1280px wide) to fit its card */
+function fitThumbs(){$$('.wk .th.live').forEach(t=>{const f=t.querySelector('iframe');if(f&&t.clientWidth)f.style.transform=`scale(${t.clientWidth/1280})`})}
+addEventListener('resize',fitThumbs);
 function rnd(seed){let x=seed*9301+49297;return()=>{x=(x*9301+49297)%233280;return x/233280}}
 /* uploaded dashboards run sandboxed (no access to this page's data); give them in-memory storage so they don't crash */
 const SHIM='<script>(function(){function m(){var d={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(d,k)?d[k]:null},setItem:function(k,v){d[k]=String(v)},removeItem:function(k){delete d[k]},clear:function(){d={}},key:function(i){return Object.keys(d)[i]||null},get length(){return Object.keys(d).length}}}["localStorage","sessionStorage"].forEach(function(n){try{window[n].length}catch(e){try{Object.defineProperty(window,n,{value:m(),configurable:true})}catch(_){}}})})();<\/script>';
-function withShim(h){const hd=/<head(\s[^>]*)?>/i,ht=/<html(\s[^>]*)?>/i;if(hd.test(h))return h.replace(hd,m=>m+SHIM);if(ht.test(h))return h.replace(ht,m=>m+SHIM);const d=h.match(/^\s*<!doctype[^>]*>/i);return d?d[0]+SHIM+h.slice(d[0].length):SHIM+h}
+/* card previews: skip entrance animations so the dashboard shows in its final state, and hide scrollbars */
+const THUMB='<style>*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition:none!important}html,body{overflow:hidden!important}</style>';
+function withShim(h,x=''){const s=SHIM+x,hd=/<head(\s[^>]*)?>/i,ht=/<html(\s[^>]*)?>/i;if(hd.test(h))return h.replace(hd,m=>m+s);if(ht.test(h))return h.replace(ht,m=>m+s);const d=h.match(/^\s*<!doctype[^>]*>/i);return d?d[0]+s+h.slice(d[0].length):s+h}
 function openDemo(id,range=30,cat='All'){const d=S.dash.find(x=>x.id===id);if(!d)return;
 const cats=['All','North','South','West'],n={7:7,30:10,90:12}[range],r=rnd(id*7+range+cats.indexOf(cat)*3);
 const vals=Array.from({length:n},()=>40+r()*60),mult=cat==='All'?1:.34,k=d.k||seed.dash[0].k;
